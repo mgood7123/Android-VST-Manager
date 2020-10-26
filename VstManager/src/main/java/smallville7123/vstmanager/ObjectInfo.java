@@ -16,17 +16,17 @@ import java.util.Locale;
 
 final class ObjectInfo {
     @NonNull
-    private final String mName;
+    final String mName;
     @NonNull
-    private final String mFullPath;
+    final String mFullPath;
     @NonNull
-    private final String mPackageName;
+    final String mPackageName;
     @NonNull
-    private final Type mType;
+    final Type mType;
     @Nullable
-    private Drawable mIcon;
+    Drawable mIcon;
     @Nullable
-    private ApplicationInfo mApplicationInfo;
+    ApplicationInfo mApplicationInfo;
 
     /**
      * type default Application

@@ -1,3 +1,5 @@
+include ':VstCore'
+include ':ExampleVstApplication'
 include ':VstManager'
 include ':Taggable'
 include ':ReflectionUtils'

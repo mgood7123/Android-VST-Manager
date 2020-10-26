@@ -10,8 +10,10 @@
         <option name="modules">
           <set>
             <option value="$PROJECT_DIR$" />
+            <option value="$PROJECT_DIR$/ExampleVstApplication" />
             <option value="$PROJECT_DIR$/ReflectionUtils" />
             <option value="$PROJECT_DIR$/Taggable" />
+            <option value="$PROJECT_DIR$/VstCore" />
             <option value="$PROJECT_DIR$/VstManager" />
             <option value="$PROJECT_DIR$/app" />
           </set>

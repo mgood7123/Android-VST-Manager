@@ -1,26 +1,22 @@
 package smallville7123.vstmanager;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
-import android.util.Log;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
-import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
 import androidx.fragment.app.FragmentTransaction;
 
 import java.util.List;
 
 import smallville7123.taggable.Taggable;
+import smallville7123.vstmanager.core.VstCore;
 
 import static android.content.pm.PackageManager.GET_META_DATA;
 
-public class VstManager {
+public class VstManager extends VstCore {
     public String TAG = Taggable.getTag(this);
     Context mContext;
     PackageManager mPackageManager;
@@ -32,6 +28,7 @@ public class VstManager {
         mContext = mOrigin;
         mPackageManager = mContext.getPackageManager();
         mInstalledApplications = mPackageManager.getInstalledApplications(GET_META_DATA);
+        mInstalledApplications.sort((object1, object2) -> object1.packageName.compareTo(object2.packageName));
     }
 
     public void showList() {
@@ -55,10 +52,18 @@ public class VstManager {
     Toast currentToast;
 
     public boolean processObject(ObjectInfo packageObject) {
-        String text = "selected package: " + packageObject.getName();
-        if (currentToast != null) currentToast.cancel();
-        currentToast = Toast.makeText(mContext, text, Toast.LENGTH_LONG);
-        currentToast.show();
-        return true;
+        if (verifyVST(mContext, mPackageManager, packageObject.mApplicationInfo)) {
+            String text = "selected package: " + packageObject.mPackageName + " is valid";
+            if (currentToast != null) currentToast.cancel();
+            currentToast = Toast.makeText(mContext, text, Toast.LENGTH_LONG);
+            currentToast.show();
+            return true;
+        } else {
+            String text = "selected package: " + packageObject.mPackageName + " is invalid";
+            if (currentToast != null) currentToast.cancel();
+            currentToast = Toast.makeText(mContext, text, Toast.LENGTH_LONG);
+            currentToast.show();
+            return false;
+        }
     }
 }
