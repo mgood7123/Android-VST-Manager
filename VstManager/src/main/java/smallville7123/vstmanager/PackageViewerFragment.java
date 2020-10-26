@@ -41,12 +41,16 @@ public final class PackageViewerFragment extends Fragment {
                 if (objectInfo.getType().isClass()) {
                     // TODO: show class properties.
                 } else {
-                    if (getFragmentManager() != null) {
-                        getFragmentManager().beginTransaction()
-                                .replace(android.R.id.content, newInstance(objectInfo.getName()))
-                                .addToBackStack("tag")
-                                .setTransition(FragmentTransaction.TRANSIT_NONE)
-                                .commit();
+                    if (objectInfo.getType() == ObjectInfo.Type.APPLICATION) {
+                        manager.processObject(objectInfo);
+                    } else {
+                        if (getFragmentManager() != null) {
+                            getFragmentManager().beginTransaction()
+                                    .replace(android.R.id.content, newInstance(objectInfo.getName()))
+                                    .addToBackStack("tag")
+                                    .setTransition(FragmentTransaction.TRANSIT_NONE)
+                                    .commit();
+                        }
                     }
                 }
             }

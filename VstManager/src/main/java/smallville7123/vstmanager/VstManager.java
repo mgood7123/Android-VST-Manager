@@ -5,7 +5,9 @@ import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.util.Log;
+import android.widget.Toast;
 
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
@@ -47,5 +49,16 @@ public class VstManager {
 
     public void onBackPressed() {
         mOrigin.getSupportFragmentManager().popBackStack();
+    }
+
+    @Nullable
+    Toast currentToast;
+
+    public boolean processObject(ObjectInfo packageObject) {
+        String text = "selected package: " + packageObject.getName();
+        if (currentToast != null) currentToast.cancel();
+        currentToast = Toast.makeText(mContext, text, Toast.LENGTH_LONG);
+        currentToast.show();
+        return true;
     }
 }

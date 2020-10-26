@@ -25,6 +25,8 @@ final class ObjectInfo {
     private final Type mType;
     @Nullable
     private Drawable mIcon;
+    @Nullable
+    private ApplicationInfo mApplicationInfo;
 
     /**
      * type default Application
@@ -33,6 +35,7 @@ final class ObjectInfo {
      * @param mPackageManager
      */
     ObjectInfo(@NonNull final ApplicationInfo applicationInfo, PackageManager mPackageManager) {
+        mApplicationInfo = applicationInfo;
         mName = applicationInfo.packageName;
         mFullPath = applicationInfo.className;
         mPackageName = applicationInfo.packageName;
