@@ -1,0 +1,5 @@
+include ':VstManager'
+include ':Taggable'
+include ':ReflectionUtils'
+include ':app'
+rootProject.name = "VST Manager"
