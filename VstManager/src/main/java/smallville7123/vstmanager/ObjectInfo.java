@@ -14,11 +14,13 @@ import android.view.ViewGroup;
 import java.lang.reflect.Modifier;
 import java.util.Locale;
 
+import smallville7123.vstmanager.core.VST;
+
 final class ObjectInfo {
     @NonNull
     final String mName;
-    @NonNull
-    final String mFullPath;
+    @Nullable
+    String mFullPath;
     @NonNull
     final String mPackageName;
     @NonNull
@@ -27,6 +29,7 @@ final class ObjectInfo {
     Drawable mIcon;
     @Nullable
     ApplicationInfo mApplicationInfo;
+    VST vst;
 
     /**
      * type default Application
@@ -36,11 +39,23 @@ final class ObjectInfo {
      */
     ObjectInfo(@NonNull final ApplicationInfo applicationInfo, PackageManager mPackageManager) {
         mApplicationInfo = applicationInfo;
-        mName = applicationInfo.packageName;
+        mName = mPackageManager.getApplicationLabel(applicationInfo).toString();
         mFullPath = applicationInfo.className;
         mPackageName = applicationInfo.packageName;
         mType = Type.APPLICATION;
         mIcon = mPackageManager.getApplicationIcon(applicationInfo);
+    }
+
+    /**
+     * type default VST
+     *
+     * @param vst a vst
+     */
+    ObjectInfo(@NonNull final VST vst) {
+        mName = vst.getLabel() == null ? vst.getPackageName() : vst.getLabel().toString();
+        mPackageName = vst.getPackageName();
+        mType = Type.VST;
+        mIcon = vst.getIcon();
     }
 
     /**
@@ -125,8 +140,13 @@ final class ObjectInfo {
         return mIcon;
     }
 
+    public VST getVst() {
+        return vst;
+    }
+
     public enum Type {
         APPLICATION,
+        VST,
         INTERFACE,
         ENUM,
         ABSTRACT,

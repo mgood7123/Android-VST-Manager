@@ -12,23 +12,37 @@ import androidx.fragment.app.FragmentTransaction;
 import java.util.List;
 
 import smallville7123.taggable.Taggable;
+import smallville7123.vstmanager.core.VST;
 import smallville7123.vstmanager.core.VstCore;
+import smallville7123.vstmanager.core.VstHost;
 
 import static android.content.pm.PackageManager.GET_META_DATA;
 
-public class VstManager extends VstCore {
+public class VstManager {
     public String TAG = Taggable.getTag(this);
     Context mContext;
     PackageManager mPackageManager;
     final List<ApplicationInfo> mInstalledApplications;
     FragmentActivity mOrigin;
+    // host contains an internal list of valid vst's
+    VstHost mVstHost = new VstHost();
+    @Nullable Toast mToast;
+
 
     VstManager(FragmentActivity fragmentActivity) {
         mOrigin = fragmentActivity;
         mContext = mOrigin;
         mPackageManager = mContext.getPackageManager();
+
+        //
+        // As of Android 11, this method no longer returns information about all apps;
+        // see https://g.co/dev/packagevisibility for details
+        //
         mInstalledApplications = mPackageManager.getInstalledApplications(GET_META_DATA);
+
         mInstalledApplications.sort((object1, object2) -> object1.packageName.compareTo(object2.packageName));
+        for (ApplicationInfo applicationInfo : mInstalledApplications)
+            mVstHost.verifyVST(mContext, mPackageManager, applicationInfo);
     }
 
     public void showList() {
@@ -48,22 +62,18 @@ public class VstManager extends VstCore {
         mOrigin.getSupportFragmentManager().popBackStack();
     }
 
-    @Nullable
-    Toast currentToast;
+
+    public boolean shouldAdd() {
+        return true;
+    }
 
     public boolean processObject(ObjectInfo packageObject) {
-        if (verifyVST(mContext, mPackageManager, packageObject.mApplicationInfo)) {
-            String text = "selected package: " + packageObject.mPackageName + " is valid";
-            if (currentToast != null) currentToast.cancel();
-            currentToast = Toast.makeText(mContext, text, Toast.LENGTH_LONG);
-            currentToast.show();
-            return true;
-        } else {
-            String text = "selected package: " + packageObject.mPackageName + " is invalid";
-            if (currentToast != null) currentToast.cancel();
-            currentToast = Toast.makeText(mContext, text, Toast.LENGTH_LONG);
-            currentToast.show();
-            return false;
-        }
+        VST vst = mVstHost.verifyVST(mContext, mPackageManager, packageObject.mApplicationInfo);
+        String valid = vst != null ? "valid" : "invalid";
+        String text = "selected package: " + packageObject.mPackageName + " is " + valid;
+        if (mToast != null) mToast.cancel();
+        mToast = Toast.makeText(mContext, text, Toast.LENGTH_LONG);
+        mToast.show();
+        return vst != null;
     }
 }

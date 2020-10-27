@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 import dalvik.system.DexFile;
+import smallville7123.vstmanager.core.VST;
 
 public final class PackageViewerFragment extends Fragment {
     private static final String EXTRA_TARGET_PACKAGE_NAME = "target_package_name";
@@ -139,9 +140,15 @@ public final class PackageViewerFragment extends Fragment {
             return null;
         } else {
             final List<ObjectInfo> retValues = new ArrayList<>();
-            for (ApplicationInfo installedApplication : manager.mInstalledApplications) {
-                retValues.add(new ObjectInfo(installedApplication, manager.mPackageManager));
+
+//            for (ApplicationInfo installedApplication : manager.mInstalledApplications) {
+//                retValues.add(new ObjectInfo(installedApplication, manager.mPackageManager));
+//            }
+
+            for (VST vst : manager.mVstHost.getVstList()) {
+                retValues.add(new ObjectInfo(vst));
             }
+
             return retValues;
         }
     }
