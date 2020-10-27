@@ -17,9 +17,10 @@ import smallville7123.vstmanager.core.VstCore;
 import smallville7123.vstmanager.core.VstHost;
 
 import static android.content.pm.PackageManager.GET_META_DATA;
+import static smallville7123.taggable.Taggable.getTag;
 
 public class VstManager {
-    public String TAG = Taggable.getTag(this);
+    public static String TAG = "VstManager";
     Context mContext;
     PackageManager mPackageManager;
     final List<ApplicationInfo> mInstalledApplications;
@@ -33,6 +34,7 @@ public class VstManager {
         mOrigin = fragmentActivity;
         mContext = mOrigin;
         mPackageManager = mContext.getPackageManager();
+        mVstHost.vstScanner.setRunOnUiThread(runnable -> mOrigin.runOnUiThread(runnable));
 
         //
         // As of Android 11, this method no longer returns information about all apps;
@@ -40,9 +42,6 @@ public class VstManager {
         //
         mInstalledApplications = mPackageManager.getInstalledApplications(GET_META_DATA);
         mInstalledApplications.sort((object1, object2) -> object1.packageName.compareTo(object2.packageName));
-
-        // package list is scanned here
-        mVstHost.scan(mContext, mPackageManager, mInstalledApplications);
     }
 
     public void showList() {
@@ -54,26 +53,7 @@ public class VstManager {
                 .commit();
     }
 
-    public String[] findPackage() {
-        return null;
-    }
-
     public void onBackPressed() {
         mOrigin.getSupportFragmentManager().popBackStack();
-    }
-
-
-    public boolean shouldAdd() {
-        return true;
-    }
-
-    public boolean processObject(ObjectInfo packageObject) {
-        VST vst = mVstHost.verifyVST(mContext, mPackageManager, packageObject.mApplicationInfo);
-        String valid = vst != null ? "valid" : "invalid";
-        String text = "selected package: " + packageObject.mPackageName + " is " + valid;
-        if (mToast != null) mToast.cancel();
-        mToast = Toast.makeText(mContext, text, Toast.LENGTH_LONG);
-        mToast.show();
-        return vst != null;
     }
 }

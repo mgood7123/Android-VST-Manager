@@ -8,32 +8,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class VstHost {
-    ArrayList<VST> vstList = new ArrayList<>();
-
-    VstCore core = new VstCore();
-
-    public VST verifyVST(Context context, PackageManager packageManager, ApplicationInfo applicationInfo) {
-        VST vst = new VST(core);
-        if (vst.verify(context, packageManager, applicationInfo)) {
-            vstList.add(vst);
-            return vst;
-        }
-        return null;
-    }
+    public final VstScanner vstScanner = new VstScanner();
 
     public VST getVST(ApplicationInfo applicationInfo) {
-        for (VST vst : vstList) {
-            if (vst.mApplicationInfo == applicationInfo) return vst;
-        }
-        return null;
+        return vstScanner.getVST(applicationInfo);
     }
 
     public ArrayList<VST> getVstList() {
-        return vstList;
+        return vstScanner.vstList;
     }
 
     public void scan(Context context, PackageManager packageManager, List<ApplicationInfo> mInstalledApplications) {
-        for (ApplicationInfo applicationInfo : mInstalledApplications)
-            verifyVST(context, packageManager, applicationInfo);
+        vstScanner.scan(context, packageManager, mInstalledApplications);
     }
 }

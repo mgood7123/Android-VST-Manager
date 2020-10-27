@@ -12,13 +12,16 @@ import java.util.Enumeration;
 import dalvik.system.DexFile;
 import smallville7123.reflectionutils.ReflectionUtils;
 
+import static android.os.SystemClock.sleep;
+
+@SuppressWarnings("deprecation")
 public class VstCore {
     public String TAG = "VstCore";
-    ReflectionUtils reflectionUtils = new ReflectionUtils();
     boolean debug = true;
     ArrayList<String> ommitedClassPrefixes = new ArrayList<>();
     ArrayList<String> ommitedPackagePrefixes = new ArrayList<>();
     ArrayList<Boolean> printedPackages = new ArrayList();
+    VstScanner scanner;
 
     public VstCore() {
         ommitedClassPrefixes.add("androidx");
@@ -34,53 +37,12 @@ public class VstCore {
         for (int i1 = 0; i1 < size; i1++) printedPackages.add(false);
     }
 
-
-    public static ArrayList<DexFile> findAllDexFiles(ClassLoader classLoader) {
-        ArrayList<DexFile> dexFiles = new ArrayList<>();
-        try {
-            Field pathListField = findField(classLoader, "pathList");
-            if (pathListField != null) {
-                Object pathList = pathListField.get(classLoader);
-                if (pathList != null) {
-                    Field dexElementsField = findField(pathList, "dexElements");
-                    if (dexElementsField != null) {
-                        Object[] dexElements = (Object[]) dexElementsField.get(pathList);
-                        if (dexElements.length != 0) {
-                            Field dexFileField = findField(dexElements[0], "dexFile");
-                            if (dexElementsField != null) {
-                                for (Object dexElement : dexElements) {
-                                    Object dexFile = dexFileField.get(dexElement);
-                                    // dexFile can be null
-                                    if (dexFile != null) dexFiles.add((DexFile) dexFile);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return dexFiles;
+    public VstCore(VstScanner scanner) {
+        this();
+        this.scanner = scanner;
     }
 
-    private static Field findField(Object instance, String name) throws NoSuchFieldException {
-        Class clazz = instance.getClass();
-
-        while (clazz != null) {
-            try {
-                Field field = clazz.getDeclaredField(name);
-                if (!field.isAccessible()) {
-                    field.setAccessible(true);
-                }
-
-                return field;
-            } catch (NoSuchFieldException var4) {
-                clazz = clazz.getSuperclass();
-            }
-        }
-        throw new NoSuchFieldException("Field " + name + " not found in " + instance.getClass());
-    }
+    int classTreeDepth = 0;
 
     Context createContextForPackage(Context context, ApplicationInfo applicationInfo) {
         if (context == null) {
@@ -92,6 +54,18 @@ public class VstCore {
             return null;
         }
 
+        // reset counts on new package context
+        classTreeDepth = 0;
+        scanner.runOnUiThread.run(() -> {
+            scanner.onClassTreeDepth.run(0);
+            scanner.onEmptyDexFileFound.run(0);
+            scanner.onDexFileFound.run(0);
+            scanner.onDexClassFound.run(0);
+            scanner.onClassQuickScannedSetMax.run(0);
+            scanner.onClassQuickScannedSetMax.run(0);
+            scanner.onClassFullyScannedSetMax.run(0);
+            scanner.onClassSkippedSetMax.run(0);
+        });
         for (int i1 = 0; i1 < ommitedPackagePrefixes.size(); i1++) {
             String ommitedPackagePrefix = ommitedPackagePrefixes.get(i1);
             if (applicationInfo.packageName.startsWith(ommitedPackagePrefix)) {
@@ -124,6 +98,114 @@ public class VstCore {
         return mContext;
     }
 
+    public ArrayList<DexFile> findAllDexFiles(ClassLoader classLoader) {
+        int count = 0;
+        int nullCount = 0;
+        ArrayList<DexFile> dexFiles = new ArrayList<>();
+        try {
+            Field pathListField = findField(classLoader, "pathList");
+            if (pathListField != null) {
+                Object pathList = pathListField.get(classLoader);
+                if (pathList != null) {
+                    Field dexElementsField = findField(pathList, "dexElements");
+                    if (dexElementsField != null) {
+                        Object[] dexElements = (Object[]) dexElementsField.get(pathList);
+                        if (dexElements.length != 0) {
+                            Field dexFileField = findField(dexElements[0], "dexFile");
+                            if (dexElementsField != null) {
+                                for (Object dexElement : dexElements) {
+                                    Object dexFile = dexFileField.get(dexElement);
+                                    // dexFile can be null
+                                    if (dexFile != null) {
+                                        int finalCount = ++count;
+                                        scanner.runOnUiThread.run(() -> scanner.onDexFileFound.run(finalCount));
+                                        dexFiles.add((DexFile) dexFile);
+                                    } else {
+                                        int finalCount = ++nullCount;
+                                        scanner.runOnUiThread.run(() -> scanner.onEmptyDexFileFound.run(finalCount));
+                                        try {
+                                            Thread.sleep(0, 1);
+                                        } catch (InterruptedException e) {
+                                            e.printStackTrace();
+                                        }
+                                    }
+                                }
+                            } else {
+                                int finalCount = ++nullCount;
+                                scanner.runOnUiThread.run(() -> scanner.onEmptyDexFileFound.run(finalCount));
+                                try {
+                                    Thread.sleep(0, 1);
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        } else {
+                            int finalCount = ++nullCount;
+                            scanner.runOnUiThread.run(() -> scanner.onEmptyDexFileFound.run(finalCount));
+                            try {
+                                Thread.sleep(0, 1);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    } else {
+                        int finalCount = ++nullCount;
+                        scanner.runOnUiThread.run(() -> scanner.onEmptyDexFileFound.run(finalCount));
+                        try {
+                            Thread.sleep(0, 1);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                } else {
+                    int finalCount = ++nullCount;
+                    scanner.runOnUiThread.run(() -> scanner.onEmptyDexFileFound.run(finalCount));
+                    try {
+                        Thread.sleep(0, 1);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            } else {
+                int finalCount = ++nullCount;
+                scanner.runOnUiThread.run(() -> scanner.onEmptyDexFileFound.run(finalCount));
+                try {
+                    Thread.sleep(0, 1);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return dexFiles;
+    }
+
+    private Field findField(Object instance, String name) throws NoSuchFieldException {
+        Class clazz = instance.getClass();
+
+        while (clazz != null) {
+            try {
+                Field field = clazz.getDeclaredField(name);
+                if (!field.isAccessible()) {
+                    field.setAccessible(true);
+                }
+
+                return field;
+            } catch (NoSuchFieldException var4) {
+                classTreeDepth++;
+                scanner.runOnUiThread.run(() -> scanner.onClassTreeDepth.run(classTreeDepth));
+                clazz = clazz.getSuperclass();
+                try {
+                    Thread.sleep(0, 1);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        throw new NoSuchFieldException("Field " + name + " not found in " + instance.getClass());
+    }
+
 
     ArrayList<String> getClassFiles(ClassLoader classLoader) {
         ArrayList<DexFile> dexList = findAllDexFiles(classLoader);
@@ -136,11 +218,16 @@ public class VstCore {
 
         // the dex size can be greater than 1 for certain applications such as Google Chrome
         ArrayList<String> list = new ArrayList<>();
+        ArrayList<String> ommited = new ArrayList<>();
+        int count = 0;
         for (int i = 0; i < dexListSize; i++) {
             Enumeration<String> entries = dexList.get(i).entries();
             mainLoop:
             while (entries.hasMoreElements()) {
                 String className = entries.nextElement();
+                int finalCount = ++count;
+                scanner.runOnUiThread.run(() -> scanner.onDexClassFound.run(finalCount));
+                boolean shouldAdd = true;
                 for (int i1 = 0; i1 < size; i1++) {
                     String ommitedClassPrefix = ommitedClassPrefixes.get(i1);
                     if (className.startsWith(ommitedClassPrefix)) {
@@ -148,32 +235,66 @@ public class VstCore {
                             if (debug) Log.d(TAG, "VstCore: getClassFiles: skipping class prefix: " + ommitedClassPrefix);
                             printed.set(i1, true);
                         }
-                        continue mainLoop;
+                        ommited.add(className);
+                        shouldAdd = false;
+                        break;
                     }
-
                 }
-                list.add(className);
+                if (shouldAdd) list.add(className);
+                try {
+                    Thread.sleep(0, 1);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
         }
+
+        int finalSize = ommited.size();
+        scanner.runOnUiThread.run(() -> scanner.onClassSkippedSetMax.run(finalSize));
+        for (int i = 0; i < finalSize; i++) {
+            int finalI = i;
+            scanner.runOnUiThread.run(() -> scanner.onClassSkipped.run(finalI, ommited.get(finalI), finalSize));
+            try {
+                Thread.sleep(0, 1);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        scanner.runOnUiThread.run(() -> scanner.onClassSkipped.run(finalSize, null, finalSize));
         list.sort((object1, object2) -> object1.compareTo(object2));
         return list;
     }
 
     boolean hasVstCallback(ArrayList<String> classFiles, CharSequence callbackClassName) {
         if (debug) Log.d(TAG, "VstCore: hasVstCallback: searching for [" + callbackClassName + "]");
-        for (String className : classFiles) {
+        int size = classFiles.size();
+        scanner.runOnUiThread.run(() -> scanner.onClassQuickScannedSetMax.run(size));
+        scanner.runOnUiThread.run(() -> scanner.onClassFullyScannedSetMax.run(size));
+        for (int i = 0; i < size; i++) {
+            String className = classFiles.get(i);
             if (className.contentEquals(callbackClassName)) {
                 if (debug) Log.d(TAG, "VstCore: hasVstCallback: found [" + callbackClassName + "]");
                 return true;
             }
+            int finalI = i;
+            scanner.runOnUiThread.run(() -> scanner.onClassQuickScanned.run(finalI, className, size));
+            try {
+                Thread.sleep(0, 1);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
+        scanner.runOnUiThread.run(() -> scanner.onClassQuickScanned.run(size, null, size));
         if (debug) Log.d(TAG, "VstCore: hasVstCallback: failed to find [" + callbackClassName + "]");
         return false;
     }
 
     ArrayList<String> getCallbacks(ClassLoader classLoader, ArrayList<String> classFiles, String callbackClassName) {
         ArrayList<String> callbacks = new ArrayList<>();
-        for (String className : classFiles) {
+        int size = classFiles.size();
+        scanner.runOnUiThread.run(() -> scanner.onClassFullyScannedSetMax.run(size));
+        for (int i = 0; i < size; i++) {
+            String className = classFiles.get(i);
             Class c = null;
             try {
                 if (debug) Log.d(TAG, "VstCore: getCallbacks: loading class: " + className);
@@ -187,8 +308,12 @@ public class VstCore {
                 if (anInterface.getName().contentEquals(callbackClassName)) {
                     if (debug) Log.d(TAG, "VstCore: getCallbacks: found callback: " + className);
                     callbacks.add(className);
+                    scanner.vstCount++;
+                    scanner.runOnUiThread.run(() -> scanner.onVstFound.run(scanner.vstCount, className, -1));
                 }
             }
+            int finalI = i;
+            scanner.runOnUiThread.run(() -> scanner.onClassFullyScanned.run(finalI, className, size));
         }
         return callbacks;
     }

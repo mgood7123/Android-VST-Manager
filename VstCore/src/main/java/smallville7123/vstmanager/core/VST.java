@@ -10,13 +10,18 @@ import java.util.ArrayList;
 
 public class VST {
     static String TAG = "VST";
+
+    VstCore core;
+    VstScanner scanner;
+
     String packageName;
     CharSequence label;
     Drawable icon;
     Drawable logo;
     Drawable banner;
-    VstCore core;
+
     ApplicationInfo mApplicationInfo;
+
     Context applicationContext;
     ClassLoader classLoader;
     String callbackClassName;
@@ -29,6 +34,21 @@ public class VST {
 
     VST(VstCore core) {
         this.core = core;
+    }
+
+    VST(VstScanner scanner) {
+        core = new VstCore(scanner);
+        this.scanner = scanner;
+    }
+
+    VST(VstCore core, VstScanner scanner) {
+        this(core);
+        if (core.scanner == null) {
+            core.scanner = scanner;
+            this.scanner = scanner;
+        } else {
+            this.scanner = core.scanner;
+        }
     }
 
     public String getPackageName() {

@@ -1,10 +1,7 @@
 package smallville7123.vstmanager;
 
-import android.app.Activity;
-import android.content.pm.ApplicationInfo;
 import android.os.Bundle;
 
-import androidx.activity.ComponentActivity;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBar;
@@ -20,6 +17,8 @@ import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import java.io.IOException;
@@ -65,17 +64,26 @@ public final class PackageViewerFragment extends Fragment {
         }
     };
 
-    @Nullable
-    RecyclerView mRecyclerView = null;
-
-    @Nullable
-    TextView mTextView = null;
-
-    @Nullable
-    FragmentActivity activity = null;
-
-    @Nullable
-    VstManager manager = null;
+    @Nullable RecyclerView mRecyclerView = null;
+    @Nullable LinearLayout mProgressContainer = null;
+    @Nullable ProgressBar mPackageProgressBar = null;
+    @Nullable TextView mPackageProgressBarText = null;
+    @Nullable TextView mPackagesSkippedText = null;
+    @Nullable TextView mPackageBeingScanned = null;
+    @Nullable TextView mClassTreeDepth = null;
+    @Nullable TextView mDexFilesFound = null;
+    @Nullable TextView mEmptyDexFilesFound = null;
+    @Nullable TextView mDexClassesFound = null;
+    @Nullable ProgressBar mClassQuickProgressBar = null;
+    @Nullable TextView mClassQuickProgressBarText = null;
+    @Nullable ProgressBar mClassFullProgressBar = null;
+    @Nullable TextView mClassFullyProgressBarText = null;
+    @Nullable ProgressBar mClassSkippedProgressBar = null;
+    @Nullable TextView mClassSkippedProgressBarText = null;
+    @Nullable TextView mVstFound = null;
+    @Nullable TextView mTextView = null;
+    @Nullable FragmentActivity activity = null;
+    @Nullable VstManager manager = null;
 
     public PackageViewerFragment(FragmentActivity mOrigin, VstManager vstManager) {
         activity = mOrigin;
@@ -118,8 +126,79 @@ public final class PackageViewerFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         final View view = inflater.inflate(R.layout.fragment_package_viewer, container, false);
 
+        mProgressContainer = view.findViewById(R.id.progress);
+        mPackageProgressBar = view.findViewById(R.id.PackageProgressBar);
+        mPackageProgressBarText = view.findViewById(R.id.PackagesScannedProgressBarText);
+        mPackagesSkippedText = view.findViewById(R.id.PackagesSkippedProgressBarText);
+        mPackageBeingScanned = view.findViewById(R.id.PackageBeingScanned);
+        mClassTreeDepth = view.findViewById(R.id.ClassTreeDepth);
+        mDexFilesFound = view.findViewById(R.id.DexFilesFound);
+        mEmptyDexFilesFound = view.findViewById(R.id.EmptyDexFilesFound);
+        mDexClassesFound = view.findViewById(R.id.DexClassesFound);
+        mClassQuickProgressBar = view.findViewById(R.id.ClassQuickProgressBar);
+        mClassQuickProgressBarText = view.findViewById(R.id.ClassesQuickScannedProgressBarText);
+        mClassFullProgressBar = view.findViewById(R.id.ClassFullProgressBar);
+        mClassFullyProgressBarText = view.findViewById(R.id.ClassesFullyScannedProgressBarText);
+        mClassSkippedProgressBar = view.findViewById(R.id.ClassSkipProgressBar);
+        mClassSkippedProgressBarText = view.findViewById(R.id.ClassesSkippedProgressBarText);
+        mVstFound = view.findViewById(R.id.VstFound);
         mRecyclerView = view.findViewById(R.id.recycler_view);
         mTextView = view.findViewById(R.id.error_text);
+
+        mRecyclerView.setVisibility(View.GONE);
+        mTextView.setVisibility(View.GONE);
+        mProgressContainer.setVisibility(View.VISIBLE);
+
+
+        manager.mVstHost.vstScanner.setOnPackageBeingScanned(packageName -> mPackageBeingScanned.setText(packageName));
+
+        manager.mVstHost.vstScanner.setOnPackageScannedSetMax(max -> {
+            mPackageProgressBar.setMax(max);
+            mPackageProgressBarText.setText(0 + "/" + max);
+        });
+        manager.mVstHost.vstScanner.setOnPackageScanned((progress, applicationInfo, max) -> {
+            mPackageProgressBar.setProgress(progress);
+            mPackageProgressBarText.setText(progress + "/" + max);
+        });
+
+        manager.mVstHost.vstScanner.setOnClassTreeDepth(count -> mClassTreeDepth.setText(String.valueOf(count)));
+
+        manager.mVstHost.vstScanner.setOnDexFileFound(count -> mDexFilesFound.setText(String.valueOf(count)));
+        manager.mVstHost.vstScanner.setOnEmptyDexFileFound(count -> mEmptyDexFilesFound.setText(String.valueOf(count)));
+        manager.mVstHost.vstScanner.setOnDexClassFound(count -> mDexClassesFound.setText(String.valueOf(count)));
+
+        manager.mVstHost.vstScanner.setOnPackageSkipped((progress, applicationInfo, max) -> mPackagesSkippedText.setText(String.valueOf(progress)));
+
+        manager.mVstHost.vstScanner.setOnClassQuickScannedSetMax(max -> {
+            mClassQuickProgressBar.setMax(max);
+            mClassQuickProgressBarText.setText(0 + "/" + max);
+        });
+        manager.mVstHost.vstScanner.setOnClassQuickScanned((progress, ClassName, max) -> {
+            mClassQuickProgressBar.setProgress(progress);
+            mClassQuickProgressBarText.setText(progress + "/" + max);
+        });
+
+        manager.mVstHost.vstScanner.setOnClassFullyScannedSetMax(max -> {
+            mClassFullProgressBar.setMax(max);
+            mClassFullyProgressBarText.setText(0 + "/" + max);
+        });
+        manager.mVstHost.vstScanner.setOnClassFullyScanned((progress, ClassName, max) -> {
+            mClassFullProgressBar.setProgress(progress);
+            mClassFullyProgressBarText.setText(progress + "/" + max);
+        });
+
+        manager.mVstHost.vstScanner.setOnClassSkippedSetMax(max -> {
+            mClassSkippedProgressBar.setMax(max);
+            mClassSkippedProgressBarText.setText(0 + "/" + max);
+        });
+        manager.mVstHost.vstScanner.setOnClassSkipped((progress, ClassName, max) -> {
+            mClassSkippedProgressBar.setProgress(progress);
+            mClassSkippedProgressBarText.setText(progress + "/" + max);
+        });
+
+        manager.mVstHost.vstScanner.setOnVstFound((count, className, unused) -> {
+            mVstFound.setText(String.valueOf(count));
+        });
 
         setupRecyclerView();
         setupParentActivityTitle();
@@ -130,7 +209,14 @@ public final class PackageViewerFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        setupData();
+        // package list is scanned here
+        manager.mVstHost.vstScanner.setOnScanComplete(() -> {
+            mProgressContainer.setVisibility(View.GONE);
+            mRecyclerView.setVisibility(View.VISIBLE);
+            mTextView.setVisibility(View.VISIBLE);
+            setupData();
+        });
+        manager.mVstHost.scan(manager.mContext, manager.mPackageManager, manager.mInstalledApplications);
     }
 
     @SuppressWarnings("ConstantConditions")
