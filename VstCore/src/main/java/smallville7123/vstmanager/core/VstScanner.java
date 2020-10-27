@@ -30,8 +30,8 @@ public class VstScanner {
 
     public interface SetMaxRunnable {
         void run(int max);
-    }
 
+    }
     RunOnUiThreadRunnable runOnUiThread = runnable -> {};
 
     public void setRunOnUiThread(RunOnUiThreadRunnable runOnUiThreadRunnable) {
@@ -48,7 +48,7 @@ public class VstScanner {
 
     PackageScanRunnable onPackageScanned = (progress, applicationInfo, max) -> {};
     SetMaxRunnable onPackageScannedSetMax = max -> {};
-    PackageScanRunnable onPackageSkipped = (progress, applicationInfo, max) -> {};
+    SetMaxRunnable onPackageSkipped = max -> {};
 
     SetMaxRunnable onClassTreeDepth = count -> {};
     SetMaxRunnable onDexFileFound = count -> {};
@@ -90,7 +90,7 @@ public class VstScanner {
         this.onPackageScannedSetMax = onPackageScannedSetMax;
     }
 
-    public void setOnPackageSkipped(PackageScanRunnable onPackageSkipped) {
+    public void setOnPackageSkipped(SetMaxRunnable onPackageSkipped) {
         this.onPackageSkipped = onPackageSkipped;
     }
 
@@ -134,6 +134,11 @@ public class VstScanner {
         this.onVstFound = onVstFound;
     }
 
+    int skipped = 0;
+    final Object scanLock = new Object();
+    boolean isScanning = false;
+    int vstCount = 0;
+
     public VST verifyVST(Context context, PackageManager packageManager, ApplicationInfo applicationInfo) {
         VST vst = new VST(core);
         vst.scanner = this;
@@ -144,25 +149,35 @@ public class VstScanner {
         return null;
     }
 
-    final Object scanLock = new Object();
-    boolean isScanning = false;
-    int vstCount = 0;
+    public void resetPackageStats() {
+        onClassTreeDepth.run(0);
+        onEmptyDexFileFound.run(0);
+        onDexFileFound.run(0);
+        onDexClassFound.run(0);
+        onClassQuickScannedSetMax.run(0);
+        onClassQuickScannedSetMax.run(0);
+        onClassFullyScannedSetMax.run(0);
+        onClassSkippedSetMax.run(0);
+    }
 
     public void scan(Context context, PackageManager packageManager, List<ApplicationInfo> mInstalledApplications) {
         if (isScanning) {
             throw new RuntimeException("cannot scan twice");
         }
         int size = mInstalledApplications.size();
+        skipped = 0;
+        vstCount = 0;
         onPackageScannedSetMax.run(size);
+        onVstFound.run(vstCount, null, -1);
+        onPackageSkipped.run(0);
+        resetPackageStats();
         new Thread(() -> {
             synchronized (scanLock) {
                 isScanning = true;
-                vstCount = 0;
-                runOnUiThread.run(() -> onVstFound.run(vstCount, null, -1));
                 runOnUiThread.run(() -> onScanStarted.run());
                 for (int i = 0; i < size; i++) {
                     ApplicationInfo applicationInfo = mInstalledApplications.get(i);
-                    int finalI = i;
+                    int finalI = i+1;
                     runOnUiThread.run(() -> onPackageBeingScanned.run(applicationInfo.packageName));
                     verifyVST(context, packageManager, applicationInfo);
                     runOnUiThread.run(() -> onPackageScanned.run(finalI, applicationInfo, size));
@@ -172,7 +187,6 @@ public class VstScanner {
                         e.printStackTrace();
                     }
                 }
-                runOnUiThread.run(() -> onPackageScanned.run(size, null, size));
                 runOnUiThread.run(() -> onScanComplete.run());
                 isScanning = false;
             }

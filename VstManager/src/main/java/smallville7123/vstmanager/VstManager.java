@@ -56,4 +56,8 @@ public class VstManager {
     public void onBackPressed() {
         mOrigin.getSupportFragmentManager().popBackStack();
     }
+
+    public boolean load(VST selected) {
+        return mVstHost.loadVST(selected);
+    }
 }

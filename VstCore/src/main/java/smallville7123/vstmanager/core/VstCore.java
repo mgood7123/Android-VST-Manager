@@ -22,6 +22,7 @@ public class VstCore {
     ArrayList<String> ommitedPackagePrefixes = new ArrayList<>();
     ArrayList<Boolean> printedPackages = new ArrayList();
     VstScanner scanner;
+    int classTreeDepth = 0;
 
     public VstCore() {
         ommitedClassPrefixes.add("androidx");
@@ -31,6 +32,12 @@ public class VstCore {
         ommitedPackagePrefixes.add("com.android");
         ommitedPackagePrefixes.add("com.google");
         ommitedPackagePrefixes.add("com.opengapps");
+        ommitedPackagePrefixes.add("org.mozilla.firefox"); // Firefox
+        ommitedPackagePrefixes.add("lynx.remix"); // Lynx Remix, a modded kik
+        ommitedPackagePrefixes.add("org.telegram.messenger"); // Telegram
+        ommitedPackagePrefixes.add("org.fdroid.fdroid"); // F-Droid
+        ommitedPackagePrefixes.add("com.crunchyroll.crunchyroid"); // Crunchyroll
+        ommitedPackagePrefixes.add("com.topjohnwu.magisk"); // Magisk Manager
 
         // only print what we are skipping once
         int size = ommitedPackagePrefixes.size();
@@ -42,30 +49,21 @@ public class VstCore {
         this.scanner = scanner;
     }
 
-    int classTreeDepth = 0;
-
     Context createContextForPackage(Context context, ApplicationInfo applicationInfo) {
         if (context == null) {
-            Log.d(TAG, "VstCore: createContextForPackage: null Context supplied");
+            if (debug) Log.d(TAG, "VstCore: createContextForPackage: null Context supplied");
+            scanner.runOnUiThread.run(() -> scanner.onPackageSkipped.run(++scanner.skipped));
             return null;
         }
         if (applicationInfo == null) {
-            Log.d(TAG, "VstCore: createContextForPackage: null ApplicationInfo supplied");
+            if (debug) Log.d(TAG, "VstCore: createContextForPackage: null ApplicationInfo supplied");
+            scanner.runOnUiThread.run(() -> scanner.onPackageSkipped.run(++scanner.skipped));
             return null;
         }
 
         // reset counts on new package context
         classTreeDepth = 0;
-        scanner.runOnUiThread.run(() -> {
-            scanner.onClassTreeDepth.run(0);
-            scanner.onEmptyDexFileFound.run(0);
-            scanner.onDexFileFound.run(0);
-            scanner.onDexClassFound.run(0);
-            scanner.onClassQuickScannedSetMax.run(0);
-            scanner.onClassQuickScannedSetMax.run(0);
-            scanner.onClassFullyScannedSetMax.run(0);
-            scanner.onClassSkippedSetMax.run(0);
-        });
+        scanner.runOnUiThread.run(() -> scanner.resetPackageStats());
         for (int i1 = 0; i1 < ommitedPackagePrefixes.size(); i1++) {
             String ommitedPackagePrefix = ommitedPackagePrefixes.get(i1);
             if (applicationInfo.packageName.startsWith(ommitedPackagePrefix)) {
@@ -73,6 +71,7 @@ public class VstCore {
                     if (debug) Log.d(TAG, "VstCore: createContextForPackage: skipping package prefix: " + ommitedPackagePrefix);
                     printedPackages.set(i1, true);
                 }
+                scanner.runOnUiThread.run(() -> scanner.onPackageSkipped.run(++scanner.skipped));
                 return null;
             }
         }
@@ -86,13 +85,15 @@ public class VstCore {
             );
         } catch (PackageManager.NameNotFoundException e) {
             if (debug) Log.d(TAG, "VstCore: createContextForPackage: could not create context: package not found: " + applicationInfo.packageName);
+            scanner.runOnUiThread.run(() -> scanner.onPackageSkipped.run(++scanner.skipped));
             return null;
         }
         if (debug) {
             if (mContext == null) {
-                Log.d(TAG, "VstCore: createContextForPackage: unknown error: could not create context for package: " + applicationInfo.packageName);
+                if (debug) Log.d(TAG, "VstCore: createContextForPackage: unknown error: could not create context for package: " + applicationInfo.packageName);
+                scanner.runOnUiThread.run(() -> scanner.onPackageSkipped.run(++scanner.skipped));
             } else {
-                Log.d(TAG, "VstCore: createContextForPackage: successfully created context for package: " + applicationInfo.packageName);
+                if (debug) Log.d(TAG, "VstCore: createContextForPackage: successfully created context for package: " + applicationInfo.packageName);
             }
         }
         return mContext;
@@ -193,8 +194,7 @@ public class VstCore {
 
                 return field;
             } catch (NoSuchFieldException var4) {
-                classTreeDepth++;
-                scanner.runOnUiThread.run(() -> scanner.onClassTreeDepth.run(classTreeDepth));
+                scanner.runOnUiThread.run(() -> scanner.onClassTreeDepth.run(++classTreeDepth));
                 clazz = clazz.getSuperclass();
                 try {
                     Thread.sleep(0, 1);
@@ -252,15 +252,15 @@ public class VstCore {
         int finalSize = ommited.size();
         scanner.runOnUiThread.run(() -> scanner.onClassSkippedSetMax.run(finalSize));
         for (int i = 0; i < finalSize; i++) {
-            int finalI = i;
-            scanner.runOnUiThread.run(() -> scanner.onClassSkipped.run(finalI, ommited.get(finalI), finalSize));
+            String className = ommited.get(i);
+            int finalI = i+1;
+            scanner.runOnUiThread.run(() -> scanner.onClassSkipped.run(finalI, className, finalSize));
             try {
                 Thread.sleep(0, 1);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
-        scanner.runOnUiThread.run(() -> scanner.onClassSkipped.run(finalSize, null, finalSize));
         list.sort((object1, object2) -> object1.compareTo(object2));
         return list;
     }
@@ -276,7 +276,7 @@ public class VstCore {
                 if (debug) Log.d(TAG, "VstCore: hasVstCallback: found [" + callbackClassName + "]");
                 return true;
             }
-            int finalI = i;
+            int finalI = i+1;
             scanner.runOnUiThread.run(() -> scanner.onClassQuickScanned.run(finalI, className, size));
             try {
                 Thread.sleep(0, 1);
@@ -284,7 +284,6 @@ public class VstCore {
                 e.printStackTrace();
             }
         }
-        scanner.runOnUiThread.run(() -> scanner.onClassQuickScanned.run(size, null, size));
         if (debug) Log.d(TAG, "VstCore: hasVstCallback: failed to find [" + callbackClassName + "]");
         return false;
     }
@@ -308,11 +307,10 @@ public class VstCore {
                 if (anInterface.getName().contentEquals(callbackClassName)) {
                     if (debug) Log.d(TAG, "VstCore: getCallbacks: found callback: " + className);
                     callbacks.add(className);
-                    scanner.vstCount++;
-                    scanner.runOnUiThread.run(() -> scanner.onVstFound.run(scanner.vstCount, className, -1));
+                    scanner.runOnUiThread.run(() -> scanner.onVstFound.run(++scanner.vstCount, className, -1));
                 }
             }
-            int finalI = i;
+            int finalI = i+1;
             scanner.runOnUiThread.run(() -> scanner.onClassFullyScanned.run(finalI, className, size));
         }
         return callbacks;

@@ -21,4 +21,8 @@ public class VstHost {
     public void scan(Context context, PackageManager packageManager, List<ApplicationInfo> mInstalledApplications) {
         vstScanner.scan(context, packageManager, mInstalledApplications);
     }
+
+    public boolean loadVST(VST vst) {
+        return true;
+    }
 }

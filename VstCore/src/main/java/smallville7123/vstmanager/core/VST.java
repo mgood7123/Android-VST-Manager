@@ -84,7 +84,7 @@ public class VST {
         classFiles = core.getClassFiles(classLoader);
         if (core.hasVstCallback(classFiles, callbackClassName)) {
             callbacks = core.getCallbacks(classLoader, classFiles, callbackClassName);
-            for (String callback : callbacks) Log.d(TAG, "vst callback = [" + callback + "]");
+            for (String callback : callbacks) if (core.debug) Log.d(TAG, "vst callback = [" + callback + "]");
             return !callbacks.isEmpty();
         }
         return false;

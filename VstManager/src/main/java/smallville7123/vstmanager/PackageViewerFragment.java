@@ -40,8 +40,11 @@ public final class PackageViewerFragment extends Fragment {
             if (isVisible()) {
                 switch (objectInfo.getType()) {
                     case VST:
-                        // no action available for VST's yet
-                        // vst is contained in objectInfo.vst
+                        if (manager != null) {
+                            if (manager.load(objectInfo.vst)) {
+                                activity.getSupportFragmentManager().popBackStack();
+                            }
+                        }
                         break;
                     case APPLICATION:
                         // no action available for Applications's yet
@@ -161,13 +164,13 @@ public final class PackageViewerFragment extends Fragment {
             mPackageProgressBarText.setText(progress + "/" + max);
         });
 
+        manager.mVstHost.vstScanner.setOnPackageSkipped(count -> mPackagesSkippedText.setText(String.valueOf(count)));
+
         manager.mVstHost.vstScanner.setOnClassTreeDepth(count -> mClassTreeDepth.setText(String.valueOf(count)));
 
         manager.mVstHost.vstScanner.setOnDexFileFound(count -> mDexFilesFound.setText(String.valueOf(count)));
         manager.mVstHost.vstScanner.setOnEmptyDexFileFound(count -> mEmptyDexFilesFound.setText(String.valueOf(count)));
         manager.mVstHost.vstScanner.setOnDexClassFound(count -> mDexClassesFound.setText(String.valueOf(count)));
-
-        manager.mVstHost.vstScanner.setOnPackageSkipped((progress, applicationInfo, max) -> mPackagesSkippedText.setText(String.valueOf(progress)));
 
         manager.mVstHost.vstScanner.setOnClassQuickScannedSetMax(max -> {
             mClassQuickProgressBar.setMax(max);
