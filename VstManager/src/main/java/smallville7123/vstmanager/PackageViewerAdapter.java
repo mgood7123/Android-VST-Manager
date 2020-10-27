@@ -78,10 +78,14 @@ final class PackageViewerAdapter extends RecyclerView.Adapter<PackageViewerAdapt
         void viewUpdate(@NonNull final ObjectInfo classObject, @NonNull final View.OnClickListener listener) {
             mRootView.setOnClickListener(listener);
             ObjectInfo.Type objectType = classObject.getType();
-            if (objectType == ObjectInfo.Type.APPLICATION) {
-                mClassTypeImage.setImageDrawable(classObject.getIcon());
-            } else {
-                mClassTypeImage.setImageResource(getDrawableRes(objectType));
+            switch (objectType) {
+                case VST:
+                case APPLICATION:
+                    mClassTypeImage.setImageDrawable(classObject.getIcon());
+                    break;
+                default:
+                    mClassTypeImage.setImageResource(getDrawableRes(objectType));
+                    break;
             }
             mClassTypeName.setText(classObject.getType().getName());
             mClassName.setText(classObject.getName());

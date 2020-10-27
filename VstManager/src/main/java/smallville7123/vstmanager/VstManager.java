@@ -39,10 +39,10 @@ public class VstManager {
         // see https://g.co/dev/packagevisibility for details
         //
         mInstalledApplications = mPackageManager.getInstalledApplications(GET_META_DATA);
-
         mInstalledApplications.sort((object1, object2) -> object1.packageName.compareTo(object2.packageName));
-        for (ApplicationInfo applicationInfo : mInstalledApplications)
-            mVstHost.verifyVST(mContext, mPackageManager, applicationInfo);
+
+        // package list is scanned here
+        mVstHost.scan(mContext, mPackageManager, mInstalledApplications);
     }
 
     public void showList() {

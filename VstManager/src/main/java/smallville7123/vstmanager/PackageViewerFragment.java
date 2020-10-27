@@ -39,20 +39,27 @@ public final class PackageViewerFragment extends Fragment {
         @Override
         public void onItemClick(@NonNull ObjectInfo objectInfo) {
             if (isVisible()) {
-                if (objectInfo.getType().isClass()) {
-                    // TODO: show class properties.
-                } else {
-                    if (objectInfo.getType() == ObjectInfo.Type.APPLICATION) {
-                        manager.processObject(objectInfo);
-                    } else {
-                        if (getFragmentManager() != null) {
-                            getFragmentManager().beginTransaction()
-                                    .replace(android.R.id.content, newInstance(objectInfo.getName()))
-                                    .addToBackStack("tag")
-                                    .setTransition(FragmentTransaction.TRANSIT_NONE)
-                                    .commit();
+                switch (objectInfo.getType()) {
+                    case VST:
+                        // no action available for VST's yet
+                        // vst is contained in objectInfo.vst
+                        break;
+                    case APPLICATION:
+                        // no action available for Applications's yet
+                        break;
+                    default:
+                        if (objectInfo.getType().isClass()) {
+                            // TODO: show class properties.
+                        } else {
+                            if (getFragmentManager() != null) {
+                                getFragmentManager().beginTransaction()
+                                        .replace(android.R.id.content, newInstance(objectInfo.getName()))
+                                        .addToBackStack("tag")
+                                        .setTransition(FragmentTransaction.TRANSIT_NONE)
+                                        .commit();
+                            }
                         }
-                    }
+                        break;
                 }
             }
         }

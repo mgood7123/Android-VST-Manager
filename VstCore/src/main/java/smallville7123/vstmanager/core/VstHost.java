@@ -5,6 +5,7 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class VstHost {
     ArrayList<VST> vstList = new ArrayList<>();
@@ -29,5 +30,10 @@ public class VstHost {
 
     public ArrayList<VST> getVstList() {
         return vstList;
+    }
+
+    public void scan(Context context, PackageManager packageManager, List<ApplicationInfo> mInstalledApplications) {
+        for (ApplicationInfo applicationInfo : mInstalledApplications)
+            verifyVST(context, packageManager, applicationInfo);
     }
 }
