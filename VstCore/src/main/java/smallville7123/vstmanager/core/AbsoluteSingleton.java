@@ -24,6 +24,8 @@ public class AbsoluteSingleton implements SingletonInterface {
 
         // try to obtain myClassLoader from parent class loader
         ClassLoader parent;
+        Class A;
+        Class B;
         ClassLoader xx;
         if (instance==null) {
             // on Android, we need to acquire the classloader of a package context
@@ -31,7 +33,8 @@ public class AbsoluteSingleton implements SingletonInterface {
             if (classLoader != null) {
                 try {
                     parent = myClassLoader.getParent();
-                    xx = myClassLoader.getClass().cast(parent.loadClass(myClassLoader.getClass().getName()));
+                    A = parent.loadClass(myClassLoader.getClass().getName());
+                    B = parent.loadClass(classLoader.getClass().getName());
 
                     // And get the other version of our current class
                     Class otherClassInstance = classLoader.loadClass(AbsoluteSingleton.class.getName());
