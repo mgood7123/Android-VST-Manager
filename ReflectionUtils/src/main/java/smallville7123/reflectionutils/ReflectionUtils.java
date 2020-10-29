@@ -34,8 +34,40 @@ public class ReflectionUtils {
         x.set(aClass, object, fieldName, value);
     }
 
+    public Method fetchMethod(Object object, String methodName) {
+        return fetchMethod(null, object, methodName);
+    }
+
+    public Method fetchMethod(Class aClass, Object object, String methodName) {
+        ReflectionMethod x = new ReflectionMethod();
+        internalList.add(x);
+        return x.fetch(aClass, object, methodName);
+    }
+
+    public Method fetchMethod(Object object, String methodName, Class ... args) {
+        return fetchMethod(null, object, methodName, args);
+    }
+
+    public Method fetchMethod(Class aClass, Object object, String methodName, Class ... args) {
+        ReflectionMethod x = new ReflectionMethod();
+        internalList.add(x);
+        return x.fetch(aClass, object, methodName, args);
+    }
+
+    public Object invokeMethod(Method method, Object object, String methodName) {
+        ReflectionMethod x = new ReflectionMethod();
+        internalList.add(x);
+        return x.invoke(method, object, methodName);
+    }
+
+    public Object invokeMethod(Method method, Object object, String methodName, Object ... args) {
+        ReflectionMethod x = new ReflectionMethod();
+        internalList.add(x);
+        return x.invoke(method, object, methodName, args);
+    }
+
     public Object invokeMethod(Object object, String methodName) {
-        return invokeMethod(null, object, methodName);
+        return invokeMethod((Class) null, object, methodName);
     }
 
     public Object invokeMethod(Class aClass, Object object, String methodName) {
@@ -45,7 +77,7 @@ public class ReflectionUtils {
     }
 
     public Object invokeMethod(Object object, String methodName, Object ... args) {
-        return invokeMethod(null, object, methodName, args);
+        return invokeMethod((Class) null, object, methodName, args);
     }
 
     public Object invokeMethod(Class aClass, Object object, String methodName, Object ... args) {
@@ -212,13 +244,16 @@ public class ReflectionUtils {
             return invoke(aClass, object, methodName, (Object[]) null);
         }
 
+        Method fetch(Class aClass, Object object, String methodName) {
+            return fetch(aClass, object, methodName, (Class[]) null);
+        }
 
-        Object invoke(Class aClass, Object object, String methodName, Object ... args) {
+        Method fetch(Class aClass, Object object, String methodName, Class ... args) {
             if (!methodFetched) {
                 try {
                     // try public
                     if (args != null) {
-                        method = ReflectionUtils.getClass(aClass, object).getMethod(methodName, toClassArray(args));
+                        method = ReflectionUtils.getClass(aClass, object).getMethod(methodName, args);
                     } else {
                         method = ReflectionUtils.getClass(aClass, object).getMethod(methodName);
                     }
@@ -228,7 +263,7 @@ public class ReflectionUtils {
                     try {
                         // try non-public
                         if (args != null) {
-                            method = ReflectionUtils.getClass(aClass, object).getDeclaredMethod(methodName, toClassArray(args));
+                            method = ReflectionUtils.getClass(aClass, object).getDeclaredMethod(methodName, args);
                         } else {
                             method = ReflectionUtils.getClass(aClass, object).getDeclaredMethod(methodName);
                         }
@@ -240,7 +275,10 @@ public class ReflectionUtils {
                     }
                 }
             }
+            return method;
+        }
 
+        Object invoke(Method method, Object object, String methodName, Object ... args) {
             if (method != null) {
                 try {
                     if (args != null) {
@@ -250,18 +288,20 @@ public class ReflectionUtils {
                     }
                 } catch (IllegalAccessException e) {
                     Log.e(TAG, "Illegal Access: Failed to invoke method: " + methodName, e);
-                    method = null;
                 } catch (IllegalArgumentException e) {
                     Log.e(TAG, "Illegal Argument: Failed to invoke method: " + methodName, e);
-                    method = null;
                 } catch (InvocationTargetException e) {
                     Log.e(TAG, "Invocation Target: Failed to invoke method: " + methodName, e);
-                    method = null;
                 }
             } else {
                 Log.e(TAG, "method is null: " + methodName);
             }
             return null;
+        }
+
+        Object invoke(Class aClass, Object object, String methodName, Object ... args) {
+            method = fetch(aClass, object, methodName, toClassArray(args));
+            return invoke(method, object, methodName, args);
         }
     }
 

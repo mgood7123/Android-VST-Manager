@@ -10,9 +10,6 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 
 import dalvik.system.DexFile;
-import smallville7123.reflectionutils.ReflectionUtils;
-
-import static android.os.SystemClock.sleep;
 
 @SuppressWarnings("deprecation")
 public class VstCore {
@@ -288,8 +285,8 @@ public class VstCore {
         return false;
     }
 
-    ArrayList<String> getCallbacks(ClassLoader classLoader, ArrayList<String> classFiles, String callbackClassName) {
-        ArrayList<String> callbacks = new ArrayList<>();
+    ArrayList<Class> getCallbacks(ClassLoader classLoader, ArrayList<String> classFiles, String callbackClassName) {
+        ArrayList<Class> callbacks = new ArrayList<>();
         int size = classFiles.size();
         scanner.runOnUiThread.run(() -> scanner.onClassFullyScannedSetMax.run(size));
         for (int i = 0; i < size; i++) {
@@ -302,13 +299,10 @@ public class VstCore {
                 if (debug) Log.d(TAG, "VstCore: getCallbacks: class could not be loaded: " + className);
                 continue;
             }
-            Class[] interfaces = c.getInterfaces();
-            for (Class anInterface : interfaces) {
-                if (anInterface.getName().contentEquals(callbackClassName)) {
-                    if (debug) Log.d(TAG, "VstCore: getCallbacks: found callback: " + className);
-                    callbacks.add(className);
-                    scanner.runOnUiThread.run(() -> scanner.onVstFound.run(++scanner.vstCount, className, -1));
-                }
+            if (ReflectionHelpers.containsInterface(c, callbackClassName)) {
+                if (debug) Log.d(TAG, "VstCore: getCallbacks: found callback: " + className);
+                callbacks.add(c);
+                scanner.runOnUiThread.run(() -> scanner.onVstFound.run(++scanner.vstCount, className, -1));
             }
             int finalI = i+1;
             scanner.runOnUiThread.run(() -> scanner.onClassFullyScanned.run(finalI, className, size));

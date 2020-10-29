@@ -52,6 +52,7 @@ final class ObjectInfo {
      * @param vst a vst
      */
     ObjectInfo(@NonNull final VST vst) {
+        this.vst = vst;
         mName = vst.getLabel() == null ? vst.getPackageName() : vst.getLabel().toString();
         mPackageName = vst.getPackageName();
         mType = Type.VST;

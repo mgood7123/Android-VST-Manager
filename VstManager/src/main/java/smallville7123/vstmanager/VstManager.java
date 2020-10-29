@@ -3,6 +3,7 @@ package smallville7123.vstmanager;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.view.ViewGroup;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
@@ -11,13 +12,10 @@ import androidx.fragment.app.FragmentTransaction;
 
 import java.util.List;
 
-import smallville7123.taggable.Taggable;
 import smallville7123.vstmanager.core.VST;
-import smallville7123.vstmanager.core.VstCore;
 import smallville7123.vstmanager.core.VstHost;
 
 import static android.content.pm.PackageManager.GET_META_DATA;
-import static smallville7123.taggable.Taggable.getTag;
 
 public class VstManager {
     public static String TAG = "VstManager";
@@ -30,9 +28,24 @@ public class VstManager {
     @Nullable Toast mToast;
 
 
-    VstManager(FragmentActivity fragmentActivity) {
+    public VstManager(FragmentActivity fragmentActivity) {
         mOrigin = fragmentActivity;
         mContext = mOrigin;
+        mPackageManager = mContext.getPackageManager();
+        mVstHost.vstScanner.setRunOnUiThread(runnable -> mOrigin.runOnUiThread(runnable));
+
+        //
+        // As of Android 11, this method no longer returns information about all apps;
+        // see https://g.co/dev/packagevisibility for details
+        //
+        mInstalledApplications = mPackageManager.getInstalledApplications(GET_META_DATA);
+        mInstalledApplications.sort((object1, object2) -> object1.packageName.compareTo(object2.packageName));
+    }
+
+    public VstManager(FragmentActivity fragmentActivity, ViewGroup viewGroup) {
+        mOrigin = fragmentActivity;
+        mContext = mOrigin;
+        mVstHost.setContentRoot(viewGroup);
         mPackageManager = mContext.getPackageManager();
         mVstHost.vstScanner.setRunOnUiThread(runnable -> mOrigin.runOnUiThread(runnable));
 
@@ -58,6 +71,6 @@ public class VstManager {
     }
 
     public boolean load(VST selected) {
-        return mVstHost.loadVST(selected);
+        return mVstHost.loadVST(mOrigin.getPackageName(), selected);
     }
 }

@@ -26,7 +26,8 @@ public class VST {
     ClassLoader classLoader;
     String callbackClassName;
     ArrayList<String> classFiles;
-    ArrayList<String> callbacks;
+    ArrayList<Class> callbacks;
+    PackageManager mPackageManager;
 
     VST() {
         core = new VstCore();
@@ -72,6 +73,8 @@ public class VST {
     }
 
     public boolean verify(Context context, PackageManager packageManager, ApplicationInfo mApplicationInfo) {
+        this.mApplicationInfo = mApplicationInfo;
+        mPackageManager = packageManager;
         applicationContext = core.createContextForPackage(context, mApplicationInfo);
         if (applicationContext == null) return false;
         packageName = mApplicationInfo.packageName;
@@ -84,7 +87,7 @@ public class VST {
         classFiles = core.getClassFiles(classLoader);
         if (core.hasVstCallback(classFiles, callbackClassName)) {
             callbacks = core.getCallbacks(classLoader, classFiles, callbackClassName);
-            for (String callback : callbacks) if (core.debug) Log.d(TAG, "vst callback = [" + callback + "]");
+            for (Class callback : callbacks) if (core.debug) Log.d(TAG, "vst callback = [" + callback + "]");
             return !callbacks.isEmpty();
         }
         return false;

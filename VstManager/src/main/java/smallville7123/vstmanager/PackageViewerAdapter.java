@@ -42,11 +42,8 @@ final class PackageViewerAdapter extends RecyclerView.Adapter<PackageViewerAdapt
     @Override
     public void onBindViewHolder(ClassListViewHolder holder, int position) {
         final ObjectInfo modelClassObject = mList.get(position);
-        holder.viewUpdate(modelClassObject, new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (mListener != null) mListener.onItemClick(modelClassObject);
-            }
+        holder.viewUpdate(modelClassObject, v -> {
+            if (mListener != null) mListener.onItemClick(modelClassObject);
         });
     }
 

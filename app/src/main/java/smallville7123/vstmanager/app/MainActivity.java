@@ -1,8 +1,10 @@
-package smallville7123.vstmanager;
+package smallville7123.vstmanager.app;
+
+import android.os.Bundle;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import android.os.Bundle;
+import smallville7123.vstmanager.VstManager;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -12,7 +14,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        manager = new VstManager(this);
+        manager = new VstManager(this, findViewById(R.id.frame));
         findViewById(R.id.button).setOnClickListener(v -> manager.showList());
     }
 

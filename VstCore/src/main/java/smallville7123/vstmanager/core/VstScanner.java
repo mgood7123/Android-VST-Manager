@@ -1,12 +1,8 @@
 package smallville7123.vstmanager.core;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
-import android.os.Handler;
-
-import androidx.fragment.app.FragmentActivity;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -160,9 +156,16 @@ public class VstScanner {
         onClassSkippedSetMax.run(0);
     }
 
+    boolean scanComplete = false;
+
     public void scan(Context context, PackageManager packageManager, List<ApplicationInfo> mInstalledApplications) {
         if (isScanning) {
-            throw new RuntimeException("cannot scan twice");
+//            throw new RuntimeException("cannot scan twice");
+            return;
+        }
+        if (scanComplete) {
+            onScanComplete.run();
+            return;
         }
         int size = mInstalledApplications.size();
         skipped = 0;
@@ -173,6 +176,7 @@ public class VstScanner {
         resetPackageStats();
         new Thread(() -> {
             synchronized (scanLock) {
+                scanComplete = false;
                 isScanning = true;
                 runOnUiThread.run(() -> onScanStarted.run());
                 for (int i = 0; i < size; i++) {
@@ -189,6 +193,7 @@ public class VstScanner {
                 }
                 runOnUiThread.run(() -> onScanComplete.run());
                 isScanning = false;
+                scanComplete = true;
             }
         }).start();
     }

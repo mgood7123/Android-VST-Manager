@@ -1,6 +1,15 @@
 package smallville7123.vstmanager;
 
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.text.TextUtils;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.LinearLayout;
+import android.widget.ProgressBar;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -13,16 +22,9 @@ import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import android.text.TextUtils;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.LinearLayout;
-import android.widget.ProgressBar;
-import android.widget.TextView;
-
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -219,7 +221,13 @@ public final class PackageViewerFragment extends Fragment {
             mTextView.setVisibility(View.VISIBLE);
             setupData();
         });
-        manager.mVstHost.scan(manager.mContext, manager.mPackageManager, manager.mInstalledApplications);
+
+        try {
+            ArrayList<ApplicationInfo> applicationInfos = new ArrayList<>(Collections.singletonList(manager.mPackageManager.getApplicationInfo("smallville7123.examplevstapplication", 0)));
+            manager.mVstHost.scan(manager.mContext, manager.mPackageManager, applicationInfos);
+        } catch (PackageManager.NameNotFoundException e) {
+            manager.mVstHost.scan(manager.mContext, manager.mPackageManager, manager.mInstalledApplications);
+        }
     }
 
     @SuppressWarnings("ConstantConditions")

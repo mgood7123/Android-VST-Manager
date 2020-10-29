@@ -7,7 +7,7 @@ android {
     buildToolsVersion "30.0.2"
 
     defaultConfig {
-        applicationId "smallville7123.vstmanager"
+        applicationId "smallville7123.vstmanager.app"
         minSdkVersion 28
         targetSdkVersion 30
         versionCode 1
