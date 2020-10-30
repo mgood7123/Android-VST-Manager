@@ -1,3 +1,5 @@
+include ':Draggable'
+include ':Clickable'
 include ':examplenonvstapplication'
 include ':VstCore'
 include ':ExampleVstApplication'
