@@ -42,9 +42,9 @@ public class VstManager {
         mInstalledApplications.sort((object1, object2) -> object1.packageName.compareTo(object2.packageName));
     }
 
-    public VstManager(FragmentActivity fragmentActivity, ViewGroup viewGroup) {
+    public VstManager(Context context, FragmentActivity fragmentActivity, ViewGroup viewGroup) {
         mOrigin = fragmentActivity;
-        mContext = mOrigin;
+        mContext = context;
         mVstHost.setContentRoot(viewGroup);
         mPackageManager = mContext.getPackageManager();
         mVstHost.vstScanner.setRunOnUiThread(runnable -> mOrigin.runOnUiThread(runnable));
@@ -71,6 +71,6 @@ public class VstManager {
     }
 
     public boolean load(VST selected) {
-        return mVstHost.loadVST(mOrigin.getPackageName(), selected);
+        return mVstHost.loadVST(mContext, mOrigin.getPackageName(), selected);
     }
 }

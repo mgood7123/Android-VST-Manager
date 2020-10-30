@@ -9,20 +9,22 @@ import android.util.Log;
 import android.util.Pair;
 import android.view.ContextThemeWrapper;
 import android.view.LayoutInflater;
+import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
 
 import androidx.annotation.LayoutRes;
 
 import java.util.ArrayList;
 import java.util.Collections;
 
+import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
+import static smallville7123.vstmanager.core.ReflectionHelpers.ClassParameter.from;
 import static smallville7123.vstmanager.core.ReflectionHelpers.newInstance;
 
 public class ReflectionActivity extends ContextThemeWrapper {
     private static final String TAG = "ReflectionActivity";
     private Object instance = null;
-
-    public ReflectionActivityController mController = null;
 
     public EventThread eventThread;
 
@@ -133,63 +135,44 @@ public class ReflectionActivity extends ContextThemeWrapper {
 
     SingletonInterface singletonInterface;
 
-    public ReflectionActivity(String packageName, Context applicationContext, Class callback, ViewGroup contentRoot) {
-        ClassLoader classLoader = applicationContext.getClassLoader();
-        ClassCaller.loadClass(classLoader, EventThread.class);
-        ClassCaller.loadClass(classLoader, String.class);
-        ClassCaller.loadClass(classLoader, Context.class);
-        eventThread = new EventThread();
-        instance = newInstance(callback);
-        singletonInterface = AbsoluteSingleton.getInstance(null);
-        singletonInterface.setValue("hello");
-        singletonInterface.setRET(new RET());
-        Log.d(TAG, "singletonInterface.getValue() = [" + singletonInterface.getValue() + "]");
-        Log.d(TAG, "singletonInterface.getRET() = [" + singletonInterface.getRET() + "]");
-//        proxy = (SingletonInterface) Proxy.newProxyInstance(classLoader, new Class[]{SingletonInterface.class}, new PassThroughProxyHandler(this.instance));
-//        proxy.setValue("hello");
-        ReflectionHelpers.callInstanceMethod(instance, "setEventThread",
-                ClassCaller.from(classLoader, String.class, packageName),
-                ClassCaller.from(classLoader, Context.class, applicationContext),
-                ClassCaller.fromNewInstance(classLoader, EventThread.class)
-        );
-//        ReflectionHelpers.traverseClass(instance.getClass(), new ReflectionHelpers.TraversalRunnable() {
-//            @Override
-//            boolean run(Object argument) {
-//                Class C = ((Class)argument);
-//                try {
-//                    Method m = C.getMethod("setEventThread", EventThread.class);
-//                    m.invoke(instance, eventThread);
-//                    return true;
-//                } catch (ReflectiveOperationException e) {
-//                    return false;
-//                }
-//            }
-//        });
-//        UiThread = new Handler(Looper.getMainLooper());
-//        handlerThread = new HandlerThread("HandlerThreadName");
-//        handlerThread.start();
-//        mHandler = new Handler(handlerThread.getLooper()) {
-//            @Override
-//            public void handleMessage(Message msg) {
-//                Log.d(TAG, "handle msg = [" + msg + "]");
-//            }
-//
-//            @Override
-//            public void dispatchMessage(@NonNull Message msg) {
-//                super.dispatchMessage(msg);
-//                Log.d(TAG, "dispatch msg = [" + msg + "]");
-//            }
-//        };
-//        init(this, applicationContext, callback, contentRoot);
-//        mController.onCreate(null);
+    Pair<Object, Context> hostLink;
+    ArrayList<Pair<Object, Context>> clients = new ArrayList<>();
+    static String listName = "Clients";
+
+    public ReflectionActivity(Context context, String packageName, VST vst, Class callback, ViewGroup contentRoot) {
+        Object client = linkClientWithHost(callback, context, vst.applicationContext);
+        Log.d(TAG, "client = [" + client + "]");
+        ReflectionHelpers.setField(client, "mContentRoot", contentRoot);
+        ReflectionHelpers.callInstanceMethod(client, "onCreate", from(Bundle.class, null));
     }
 
-    private void init(ReflectionActivity reflectionActivity, Context applicationContext, Class callback, ViewGroup contentRoot) {
-        mController = new ReflectionActivityController(reflectionActivity, callback);
-        mController.setUiThread(reflectionActivity.UiThread);
-        mController.setContentRoot(contentRoot);
-        mController.attachBaseContext(applicationContext);
-        mController.setLayoutInflater(LayoutInflater.from(applicationContext));
+    private Object linkClientWithHost(Class clientClass, Context hostContext, Context clientContext) {
+        Pair<Object, Context> host = new Pair<>(this, hostContext);
+        Pair<Object, Context> client = new Pair<>(newInstance(clientClass), clientContext);
+        ReflectionHelpers.callInstanceMethod(client.first, "linkHost",
+                from(Pair.class, host),
+                from(Pair.class, client)
+        );
+        return client.first;
+    }
+
+    public void linkClient(Pair<Object, Context> client) {
+        clients.add(client);
+        Log.d(TAG, "linkClient() called with: client = [" + client + "]");
+        // host/client link has successfully been established
+        Log.d(TAG, "linkClient: host/client link has successfully been established");
+    }
+
+    public void linkHost(Pair<Object, Context> host, Pair<Object, Context> client) {
+        Log.d(TAG, "linkHost() called with: host = [" + host + "], client = [" + client + "]");
+        hostLink = host;
+        // now, establish a link to the host
+        ReflectionHelpers.callInstanceMethod(host.first, "linkClient",
+                from(Pair.class, client)
+        );
+        // next we set ourselves up
+        attachBaseContext(client.second);
+        layoutInflater = LayoutInflater.from(this);
     }
 
     protected void onCreate(Bundle savedInstanceState) {
@@ -198,21 +181,34 @@ public class ReflectionActivity extends ContextThemeWrapper {
 
     protected void setContentView(ViewGroup contentRoot) {
         runOnUIThread(() -> {
-            mContentRoot.removeViewAt(0);
+            if (mContentRoot.getChildAt(0) != null) {
+                mContentRoot.removeViewAt(0);
+            }
             mContentRoot.addView(contentRoot);
         });
     }
 
-    protected void setContentView(@LayoutRes int res) {
-        runOnUIThread(new Runnable() {
-            @Override
-            public void run() {
-                layoutInflater.inflate(res, mContentRoot, true);
+    protected void setContentView(ViewGroup contentRoot, FrameLayout.LayoutParams layoutParams) {
+        runOnUIThread(() -> {
+            if (mContentRoot.getChildAt(0) != null) {
+                mContentRoot.removeViewAt(0);
             }
+            mContentRoot.addView(contentRoot, layoutParams);
+        });
+    }
+
+    protected void setContentView(@LayoutRes int res) {
+        runOnUIThread(() -> {
+            View content = layoutInflater.inflate(res, mContentRoot, false);
+            if (mContentRoot.getChildAt(0) != null) {
+                mContentRoot.removeViewAt(0);
+            }
+            mContentRoot.addView(content, new ViewGroup.LayoutParams(MATCH_PARENT, MATCH_PARENT));
         });
     }
 
     final public void runOnUIThread(Runnable r) {
-        UiThread.post(r);
+        r.run();
+//        UiThread.post(r);
     }
 }

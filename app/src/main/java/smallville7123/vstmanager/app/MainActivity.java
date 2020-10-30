@@ -14,7 +14,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        manager = new VstManager(this, findViewById(R.id.frame));
+        manager = new VstManager(this, this, findViewById(R.id.frame));
         findViewById(R.id.button).setOnClickListener(v -> manager.showList());
     }
 
