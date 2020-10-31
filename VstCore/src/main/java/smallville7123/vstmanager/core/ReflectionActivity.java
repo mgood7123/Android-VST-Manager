@@ -181,18 +181,18 @@ public class ReflectionActivity extends ContextThemeWrapper {
 
     protected void setContentView(ViewGroup contentRoot) {
         runOnUIThread(() -> {
-            if (mContentRoot.getChildAt(0) != null) {
-                mContentRoot.removeViewAt(0);
-            }
+//            if (mContentRoot.getChildAt(0) != null) {
+//                mContentRoot.removeViewAt(0);
+//            }
             mContentRoot.addView(contentRoot);
         });
     }
 
     protected void setContentView(ViewGroup contentRoot, FrameLayout.LayoutParams layoutParams) {
         runOnUIThread(() -> {
-            if (mContentRoot.getChildAt(0) != null) {
-                mContentRoot.removeViewAt(0);
-            }
+//            if (mContentRoot.getChildAt(0) != null) {
+//                mContentRoot.removeViewAt(0);
+//            }
             mContentRoot.addView(contentRoot, layoutParams);
         });
     }
@@ -200,9 +200,9 @@ public class ReflectionActivity extends ContextThemeWrapper {
     protected void setContentView(@LayoutRes int res) {
         runOnUIThread(() -> {
             View content = layoutInflater.inflate(res, mContentRoot, false);
-            if (mContentRoot.getChildAt(0) != null) {
-                mContentRoot.removeViewAt(0);
-            }
+//            if (mContentRoot.getChildAt(0) != null) {
+//                mContentRoot.removeViewAt(0);
+//            }
             mContentRoot.addView(content, new ViewGroup.LayoutParams(MATCH_PARENT, MATCH_PARENT));
         });
     }

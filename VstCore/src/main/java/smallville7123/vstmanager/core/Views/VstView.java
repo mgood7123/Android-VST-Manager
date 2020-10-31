@@ -55,7 +55,7 @@ public class VstView extends RelativeLayout {
         } else {
             // wrap view in WindowView
             WindowView window = new WindowView(mContext);
-            window.setBackgroundColor(Color.argb(255, 0, 0, 255));
+            window.setBackgroundColor(Color.BLACK);
             window.setDrag(this);
             window.content.addView(child, params);
             super.addView(window, new LayoutParams(defaultWindowWidth, defaultWindowHeight));

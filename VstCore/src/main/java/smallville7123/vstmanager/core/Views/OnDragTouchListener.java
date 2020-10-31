@@ -12,9 +12,9 @@ public class OnDragTouchListener implements View.OnTouchListener {
 
     private static final float CLICK_DRAG_TOLERANCE = 30.0f;
     public float widthLeft = 20.0f;
-    public float widthTop = 20.0f;
     public float widthRight = 20.0f;
-    public float widthBottom = 20.0f;
+    public float heightTop = 20.0f;
+    public float heightBottom = 20.0f;
     private float relativeToViewX;
     private float relativeToViewY;
     public boolean resizing = false;
@@ -207,7 +207,8 @@ public class OnDragTouchListener implements View.OnTouchListener {
                             layoutParams.width = (int) ((downRawX + originalRight) - event.getRawX());
                             mView.setLayoutParams(layoutParams);
                         }
-                        updateViewBounds();
+                        width = mView.getWidth();
+                        height = mView.getHeight();
                     }
                     break;
             }
@@ -233,10 +234,10 @@ public class OnDragTouchListener implements View.OnTouchListener {
                     originalRight = v.getRight();
                     originalBottom = v.getBottom();
                     if (relativeToViewX < widthLeft) {
-                        if (relativeToViewY < widthTop) {
+                        if (relativeToViewY < heightTop) {
                             resizingTopLeft = true;
                             corner = true;
-                        } else if ((v.getBottom()-relativeToViewY) < widthBottom) {
+                        } else if ((v.getBottom()-relativeToViewY) < heightBottom) {
                             resizingBottomLeft = true;
                             corner = true;
                         } else {
@@ -246,10 +247,10 @@ public class OnDragTouchListener implements View.OnTouchListener {
                         resizing = true;
                         mView.invalidate();
                     } else if ((v.getRight()-relativeToViewX) < widthRight) {
-                        if (relativeToViewY < widthTop) {
+                        if (relativeToViewY < heightTop) {
                             resizingTopRight = true;
                             corner = true;
-                        } else if ((v.getBottom()-relativeToViewY) < widthBottom) {
+                        } else if ((v.getBottom()-relativeToViewY) < heightBottom) {
                             resizingBottomRight = true;
                             corner = true;
                         } else {
@@ -258,11 +259,11 @@ public class OnDragTouchListener implements View.OnTouchListener {
                         }
                         resizing = true;
                         mView.invalidate();
-                    } else if (relativeToViewY < widthTop) {
+                    } else if (relativeToViewY < heightTop) {
                         resizingTop = true;
                         resizing = true;
                         mView.invalidate();
-                    } else if ((v.getBottom()-relativeToViewY) < widthBottom) {
+                    } else if ((v.getBottom()-relativeToViewY) < heightBottom) {
                         resizingBottom = true;
                         resizing = true;
                         mView.invalidate();
