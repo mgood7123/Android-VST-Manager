@@ -27,8 +27,13 @@ public class VstView extends RelativeLayout {
 
     @Override
     public void addView(View child, int index, ViewGroup.LayoutParams params) {
-        Log.d(TAG, "addView() called with: child = [" + child + "], index = [" + index + "], params = [" + params + "]");
-        child.setOnTouchListener(new OnDragTouchListener(child, this));
-            super.addView(child, index, params);
+        if (child instanceof WindowView) {
+            Log.d(TAG, "addView() called with: child = [" + child + "], index = [" + index + "], params = [" + params + "]");
+            WindowView x = (WindowView) child;
+            x.setDrag(this);
+            super.addView(x, index, params);
+        } else {
+            throw new RuntimeException("VstView can only accept view's of type WindowView");
+        }
     }
 }

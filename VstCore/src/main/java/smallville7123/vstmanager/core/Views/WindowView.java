@@ -2,6 +2,8 @@ package smallville7123.vstmanager.core.Views;
 
 import android.content.Context;
 import android.content.res.Resources;
+import android.graphics.Canvas;
+import android.graphics.Paint;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.View;
@@ -12,6 +14,8 @@ import android.widget.RelativeLayout;
 import smallville7123.vstmanager.core.R;
 
 public class WindowView extends RelativeLayout {
+
+    private OnDragTouchListener draggable;
 
     public WindowView(Context context) {
         super(context);
@@ -31,6 +35,11 @@ public class WindowView extends RelativeLayout {
     public WindowView(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
         super(context, attrs, defStyleAttr, defStyleRes);
         init(context, attrs);
+    }
+
+    public void setDrag(VstView parent) {
+        draggable = new OnDragTouchListener(this, parent);
+        setOnTouchListener(draggable);
     }
 
     private static class Internal {}
@@ -60,6 +69,12 @@ public class WindowView extends RelativeLayout {
         frame = root.findViewById(R.id.window_frame);
         content = root.findViewById(R.id.window_content);
         addView(root, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
+        highlightPaint = new Paint();
+        highlightPaint.setARGB(200, 0, 0, 255);
+        highlightCornerPaint = new Paint();
+        highlightCornerPaint.setARGB(200, 255, 90, 0);
+        regionPaint = new Paint();
+        regionPaint.setARGB(255, 168, 168, 168);
     }
 
     private static final String TAG = "WindowView";
@@ -72,8 +87,31 @@ public class WindowView extends RelativeLayout {
             super.addView(child, index, params);
         } else {
             Log.d(TAG, "addView() called with EXTERNAL: child = [" + child + "], index = [" + index + "], params = [" + params + "]");
-//            child.setOnTouchListener(new OnDragTouchListener(child, content));
             content.addView(child, index, params);
         }
+    }
+
+    Paint highlightPaint;
+    Paint highlightCornerPaint;
+    Paint regionPaint;
+
+    @Override
+    public void onDrawForeground(Canvas canvas) {
+        super.onDrawForeground(canvas);
+        int width = canvas.getWidth();
+        int height = canvas.getHeight();
+        Paint rp = regionPaint;
+        if (draggable.resizing) {
+            if (draggable.corner) {
+                rp = highlightCornerPaint;
+            } else {
+                rp = highlightPaint;
+            }
+            canvas.drawRect(0, 0, width, height, rp);
+        }
+        canvas.drawRect(0, 0, draggable.widthLeft, height, rp);
+        canvas.drawRect(0, 0, width, draggable.widthTop, rp);
+        canvas.drawRect(width - draggable.widthRight, 0, width, height, rp);
+        canvas.drawRect(0, height - draggable.widthBottom, width, height, rp);
     }
 }

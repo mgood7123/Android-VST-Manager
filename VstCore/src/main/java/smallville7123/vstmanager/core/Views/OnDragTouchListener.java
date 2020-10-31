@@ -1,12 +1,36 @@
 package smallville7123.vstmanager.core.Views;
 
+import android.graphics.RectF;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
 
 public class OnDragTouchListener implements View.OnTouchListener {
 
+    private static final String TAG = "OnDragTouchListener";
 
     private static final float CLICK_DRAG_TOLERANCE = 30.0f;
+    public float widthLeft = 20.0f;
+    public float widthTop = 20.0f;
+    public float widthRight = 20.0f;
+    public float widthBottom = 20.0f;
+    private float relativeToViewX;
+    private float relativeToViewY;
+    public boolean resizing = false;
+    private RectF leftBounds = new RectF();
+    public boolean corner = false;
+
+    boolean resizingTop = false;
+    boolean resizingTopLeft = false;
+    boolean resizingTopRight = false;
+    boolean resizingBottom = false;
+    boolean resizingBottomLeft = false;
+    boolean resizingBottomRight = false;
+    boolean resizingLeft = false;
+    boolean resizingRight = false;
+    private int originalRight;
+    private int originalBottom;
 
     /**
      * Callback used to indicate when the drag is finished
@@ -131,6 +155,10 @@ public class OnDragTouchListener implements View.OnTouchListener {
             switch (event.getAction()) {
                 case MotionEvent.ACTION_CANCEL:
                 case MotionEvent.ACTION_UP:
+                    if (resizing) {
+                        resizing = false;
+                        mView.invalidate();
+                    }
                     upRawX = event.getRawX();
                     upRawY = event.getRawY();
                     upDX = upRawX - downRawX;
@@ -141,21 +169,107 @@ public class OnDragTouchListener implements View.OnTouchListener {
                     onDragFinish();
                     break;
                 case MotionEvent.ACTION_MOVE:
-                    mView.animate().x(bounds[0]).y(bounds[1]).setDuration(0).start();
+                    if (!resizing) {
+                        mView.animate().x(bounds[0]).y(bounds[1]).setDuration(0).start();
+                    } else {
+                        ViewGroup.LayoutParams layoutParams = mView.getLayoutParams();
+                        if (resizingRight) {
+                            layoutParams.width = (int) event.getX();
+                            mView.setLayoutParams(layoutParams);
+                        } else if (resizingLeft) {
+                            mView.animate().x(bounds[0]).setDuration(0).start();
+                            layoutParams.width = (int) ((downRawX + originalRight) - event.getRawX());
+                            mView.setLayoutParams(layoutParams);
+                        } else if (resizingTop) {
+                            mView.animate().y(bounds[1]).setDuration(0).start();
+                            layoutParams.height = (int) ((downRawY + originalBottom) - event.getRawY());
+                            mView.setLayoutParams(layoutParams);
+                        } else if (resizingBottom) {
+                            layoutParams.height = (int) event.getY();
+                            mView.setLayoutParams(layoutParams);
+                        } else if (resizingTopRight) {
+                            mView.animate().y(bounds[1]).setDuration(0).start();
+                            layoutParams.height = (int) ((downRawY + originalBottom) - event.getRawY());
+                            layoutParams.width = (int) event.getX();
+                            mView.setLayoutParams(layoutParams);
+                        } else if (resizingTopLeft) {
+                            mView.animate().x(bounds[0]).y(bounds[1]).setDuration(0).start();
+                            layoutParams.width = (int) ((downRawX + originalRight) - event.getRawX());
+                            layoutParams.height = (int) ((downRawY + originalBottom) - event.getRawY());
+                            mView.setLayoutParams(layoutParams);
+                        } else if (resizingBottomRight) {
+                            layoutParams.height = (int) event.getY();
+                            layoutParams.width = (int) event.getX();
+                            mView.setLayoutParams(layoutParams);
+                        } else if (resizingBottomLeft) {
+                            mView.animate().x(bounds[0]).setDuration(0).start();
+                            layoutParams.height = (int) event.getY();
+                            layoutParams.width = (int) ((downRawX + originalRight) - event.getRawX());
+                            mView.setLayoutParams(layoutParams);
+                        }
+                    }
                     break;
             }
             return true;
         } else {
             switch (event.getAction()) {
                 case MotionEvent.ACTION_DOWN:
-                    isDragging = true;
-                    if (!isInitialized) {
-                        updateBounds();
-                    }
                     originalX = v.getX();
                     originalY = v.getY();
                     downRawX = event.getRawX();
                     downRawY = event.getRawY();
+                    relativeToViewX = event.getX();
+                    relativeToViewY = event.getY();
+                    corner = false;
+                    resizingTop = false;
+                    resizingTopLeft = false;
+                    resizingTopRight = false;
+                    resizingBottom = false;
+                    resizingBottomLeft = false;
+                    resizingBottomRight = false;
+                    resizingLeft = false;
+                    resizingRight = false;
+                    originalRight = v.getRight();
+                    originalBottom = v.getBottom();
+                    if (relativeToViewX < widthLeft) {
+                        if (relativeToViewY < widthTop) {
+                            resizingTopLeft = true;
+                            corner = true;
+                        } else if ((v.getBottom()-relativeToViewY) < widthBottom) {
+                            resizingBottomLeft = true;
+                            corner = true;
+                        } else {
+                            Log.d(TAG, "onTouch: LEFT EDGE");
+                            resizingLeft = true;
+                        }
+                        resizing = true;
+                        mView.invalidate();
+                    } else if ((v.getRight()-relativeToViewX) < widthRight) {
+                        if (relativeToViewY < widthTop) {
+                            resizingTopRight = true;
+                            corner = true;
+                        } else if ((v.getBottom()-relativeToViewY) < widthBottom) {
+                            resizingBottomRight = true;
+                            corner = true;
+                        } else {
+                            resizingRight = true;
+                            Log.d(TAG, "onTouch: RIGHT EDGE");
+                        }
+                        resizing = true;
+                        mView.invalidate();
+                    } else if (relativeToViewY < widthTop) {
+                        resizingTop = true;
+                        resizing = true;
+                        mView.invalidate();
+                    } else if ((v.getBottom()-relativeToViewY) < widthBottom) {
+                        resizingBottom = true;
+                        resizing = true;
+                        mView.invalidate();
+                    }
+                    isDragging = true;
+                    if (!isInitialized) {
+                        updateBounds();
+                    }
                     downDX = originalX - downRawX;
                     downDY = originalY - downRawY;
                     if (mOnDragActionListener != null) {
