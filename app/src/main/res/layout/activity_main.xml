@@ -18,17 +18,22 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:background="@color/purple_500">
-            <smallville7123.vstmanager.core.Views.WindowView
-                android:layout_width="200dp"
-                android:layout_height="200dp"
-                android:background="@color/teal_700"
-                >
-                <Button
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="VST VIEW"
-                    android:textSize="30sp" />
-            </smallville7123.vstmanager.core.Views.WindowView>
+<!--            <smallville7123.vstmanager.core.Views.WindowView-->
+<!--                android:layout_width="200dp"-->
+<!--                android:layout_height="200dp"-->
+<!--                android:background="@color/teal_700"-->
+<!--                >-->
+<!--                <Button-->
+<!--                    android:layout_width="wrap_content"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:text="VST VIEW"-->
+<!--                    android:textSize="30sp" />-->
+<!--            </smallville7123.vstmanager.core.Views.WindowView>-->
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="VST VIEW"
+                android:textSize="30sp" />
         </smallville7123.vstmanager.core.Views.VstView>
     </FrameLayout>
 

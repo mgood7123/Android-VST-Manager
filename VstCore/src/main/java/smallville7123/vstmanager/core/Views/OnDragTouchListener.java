@@ -207,6 +207,7 @@ public class OnDragTouchListener implements View.OnTouchListener {
                             layoutParams.width = (int) ((downRawX + originalRight) - event.getRawX());
                             mView.setLayoutParams(layoutParams);
                         }
+                        updateViewBounds();
                     }
                     break;
             }
