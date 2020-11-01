@@ -38,7 +38,15 @@ public class WindowView extends RelativeLayout {
     }
 
     public void setDrag(VstView parent) {
-        draggable = new OnDragTouchListener(this, parent);
+        draggable = new OnDragTouchListener(this, parent) {
+            @Override
+            public void updateOtherBounds(int w, int h) {
+                super.updateOtherBounds(w, h);
+//                windowContentLayout.width = w;
+//                windowContentLayout.height = h;
+//                content.setLayoutParams(windowContentLayout);
+            }
+        };
         draggable.widthLeft = touchZoneWidthLeft;
         draggable.widthRight = touchZoneWidthRight;
         draggable.heightTop = touchZoneHeightTop;
@@ -58,6 +66,7 @@ public class WindowView extends RelativeLayout {
     public float touchZoneHeightTop = 200.0f;
     public float touchZoneHeightBottom = 200.0f;
     public float touchZoneHeight;
+    private float titlebarOffset;
     public float titlebarHeight = 160.0f;
 
     void getAttributeParameters(Context context, AttributeSet attrs, Resources.Theme theme) {
@@ -111,7 +120,7 @@ public class WindowView extends RelativeLayout {
     }
 
     void drawTitleBar(Canvas canvas, int width, int height, Paint paint) {
-        canvas.drawRect(0, 0, width, titlebarHeight, paint);
+        canvas.drawRect(0, titlebarOffset, width, titlebarOffset+titlebarHeight, paint);
     }
 
     void drawBorders(Canvas canvas, int width, int height, Paint paint) {
@@ -135,11 +144,12 @@ public class WindowView extends RelativeLayout {
         frame = root.findViewById(R.id.window_frame);
         touchZoneWidth = touchZoneWidthLeft+touchZoneWidthRight;
         touchZoneHeight = touchZoneHeightTop+touchZoneHeightBottom;
+        titlebarOffset = touchZoneHeightTop;
         windowContentLayout = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
-        windowContentLayout.topMargin = (int) (Math.max(heightTop, titlebarHeight));
-        windowContentLayout.bottomMargin = (int) (heightBottom+touchZoneHeightBottom+touchZoneHeight);
-        windowContentLayout.leftMargin = (int) (widthLeft+touchZoneWidthLeft);
-        windowContentLayout.rightMargin = (int) (widthRight+touchZoneWidthRight+touchZoneWidth);
+        windowContentLayout.topMargin = (int) (titlebarOffset+titlebarHeight);
+        windowContentLayout.bottomMargin = (int) (touchZoneHeightBottom);
+        windowContentLayout.leftMargin = (int) (touchZoneWidthLeft);
+        windowContentLayout.rightMargin = (int) (touchZoneWidth+touchZoneWidthRight);
 
         content = root.findViewById(R.id.window_content);
         content.setLayoutParams(windowContentLayout);

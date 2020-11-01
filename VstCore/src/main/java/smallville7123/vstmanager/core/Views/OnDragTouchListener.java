@@ -6,6 +6,8 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 
+import androidx.annotation.CallSuper;
+
 public class OnDragTouchListener implements View.OnTouchListener {
 
     private static final String TAG = "OnDragTouchListener";
@@ -129,6 +131,16 @@ public class OnDragTouchListener implements View.OnTouchListener {
 
         maxTop = 0;
         maxBottom = maxTop + mParent.getHeight();
+    }
+
+    @CallSuper
+    public void updateOtherBounds(ViewGroup.LayoutParams layoutParams) {
+        updateOtherBounds(layoutParams.width, layoutParams.height);
+    }
+
+    @CallSuper
+    public void updateOtherBounds(int width, int height) {
+
     }
 
     @Override
@@ -296,6 +308,7 @@ public class OnDragTouchListener implements View.OnTouchListener {
                 layoutParams.width = minWidth;
                 mView.animate().x(minX).setDuration(0).start();
             }
+            updateOtherBounds(layoutParams);
             mView.setLayoutParams(layoutParams);
         }
     }
@@ -309,6 +322,7 @@ public class OnDragTouchListener implements View.OnTouchListener {
                 layoutParams.width = (int) (maxRight - widthRight - (originalX+widthLeft));
             }
         }
+        updateOtherBounds(layoutParams);
         mView.setLayoutParams(layoutParams);
     }
 
@@ -326,6 +340,7 @@ public class OnDragTouchListener implements View.OnTouchListener {
                 layoutParams.height = minHeight;
                 mView.animate().y(minY).setDuration(0).start();
             }
+            updateOtherBounds(layoutParams);
             mView.setLayoutParams(layoutParams);
         }
     }
@@ -339,6 +354,7 @@ public class OnDragTouchListener implements View.OnTouchListener {
                 layoutParams.height = (int) (maxBottom - heightBottom - (originalY+heightTop));
             }
         }
+        updateOtherBounds(layoutParams);
         mView.setLayoutParams(layoutParams);
     }
 
