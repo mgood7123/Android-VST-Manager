@@ -31,6 +31,12 @@ public class OnDragTouchListener implements View.OnTouchListener {
     boolean resizingRight = false;
     private int originalRight;
     private int originalBottom;
+    private int downWidth;
+    private int downHeight;
+    private int minWidth = 100;
+    private int minHeight = 100;
+    private float minX;
+    private float minY;
 
     /**
      * Callback used to indicate when the drag is finished
@@ -127,31 +133,10 @@ public class OnDragTouchListener implements View.OnTouchListener {
 
     @Override
     public boolean onTouch(View v, MotionEvent event) {
+        Log.d(TAG, "MotionEvent.actionToString(event.getAction()) = [" + MotionEvent.actionToString(event.getAction()) + "]");
+        float currentRawX = event.getRawX();
+        float currentRawY = event.getRawY();
         if (isDragging) {
-            float[] bounds = new float[4];
-            // LEFT
-            bounds[0] = event.getRawX() + downDX;
-            if (bounds[0] < maxLeft) {
-                bounds[0] = maxLeft;
-            }
-            // RIGHT
-            bounds[2] = bounds[0] + width;
-            if (bounds[2] > maxRight) {
-                bounds[2] = maxRight;
-                bounds[0] = bounds[2] - width;
-            }
-            // TOP
-            bounds[1] = event.getRawY() + downDY;
-            if (bounds[1] < maxTop) {
-                bounds[1] = maxTop;
-            }
-            // BOTTOM
-            bounds[3] = bounds[1] + height;
-            if (bounds[3] > maxBottom) {
-                bounds[3] = maxBottom;
-                bounds[1] = bounds[3] - height;
-            }
-
             switch (event.getAction()) {
                 case MotionEvent.ACTION_CANCEL:
                 case MotionEvent.ACTION_UP:
@@ -159,8 +144,8 @@ public class OnDragTouchListener implements View.OnTouchListener {
                         resizing = false;
                         mView.invalidate();
                     }
-                    upRawX = event.getRawX();
-                    upRawY = event.getRawY();
+                    upRawX = currentRawX;
+                    upRawY = currentRawY;
                     upDX = upRawX - downRawX;
                     upDY = upRawY - downRawY;
                     if ((Math.abs(upDX) < CLICK_DRAG_TOLERANCE) && (Math.abs(upDY) < CLICK_DRAG_TOLERANCE)) {
@@ -170,42 +155,52 @@ public class OnDragTouchListener implements View.OnTouchListener {
                     break;
                 case MotionEvent.ACTION_MOVE:
                     if (!resizing) {
+                        float[] bounds = new float[4];
+                        // LEFT
+                        bounds[0] = currentRawX + downDX;
+                        if (bounds[0] < maxLeft) {
+                            bounds[0] = maxLeft;
+                        }
+                        // RIGHT
+                        bounds[2] = bounds[0] + originalRight;
+                        if (bounds[2] > maxRight) {
+                            bounds[2] = maxRight;
+                            bounds[0] = maxRight - originalRight;
+                        }
+                        // TOP
+                        bounds[1] = currentRawY + downDY;
+                        if (bounds[1] < maxTop) {
+                            bounds[1] = maxTop;
+                        }
+                        // BOTTOM
+                        bounds[3] = bounds[1] + originalBottom;
+                        if (bounds[3] > maxBottom) {
+                            bounds[3] = maxBottom;
+                            bounds[1] = maxBottom - originalBottom;
+                        }
                         mView.animate().x(bounds[0]).y(bounds[1]).setDuration(0).start();
                     } else {
                         ViewGroup.LayoutParams layoutParams = mView.getLayoutParams();
-                        if (resizingRight) {
-                            layoutParams.width = (int) event.getX();
-                            mView.setLayoutParams(layoutParams);
-                        } else if (resizingLeft) {
-                            mView.animate().x(bounds[0]).setDuration(0).start();
-                            layoutParams.width = (int) ((downRawX + originalRight) - event.getRawX());
-                            mView.setLayoutParams(layoutParams);
+                        if (resizingLeft) {
+                            resizeLeft(currentRawX, layoutParams);
+                        } else if (resizingRight) {
+                            resizeRight(currentRawX, layoutParams);
                         } else if (resizingTop) {
-                            mView.animate().y(bounds[1]).setDuration(0).start();
-                            layoutParams.height = (int) ((downRawY + originalBottom) - event.getRawY());
-                            mView.setLayoutParams(layoutParams);
+                            resizeTop(currentRawY, layoutParams);
                         } else if (resizingBottom) {
-                            layoutParams.height = (int) event.getY();
-                            mView.setLayoutParams(layoutParams);
+                            resizeBottom(currentRawY, layoutParams);
                         } else if (resizingTopRight) {
-                            mView.animate().y(bounds[1]).setDuration(0).start();
-                            layoutParams.height = (int) ((downRawY + originalBottom) - event.getRawY());
-                            layoutParams.width = (int) event.getX();
-                            mView.setLayoutParams(layoutParams);
+                            resizeTop(currentRawY, layoutParams);
+                            resizeRight(currentRawX, layoutParams);
                         } else if (resizingTopLeft) {
-                            mView.animate().x(bounds[0]).y(bounds[1]).setDuration(0).start();
-                            layoutParams.width = (int) ((downRawX + originalRight) - event.getRawX());
-                            layoutParams.height = (int) ((downRawY + originalBottom) - event.getRawY());
-                            mView.setLayoutParams(layoutParams);
+                            resizeTop(currentRawY, layoutParams);
+                            resizeLeft(currentRawX, layoutParams);
                         } else if (resizingBottomRight) {
-                            layoutParams.height = (int) event.getY();
-                            layoutParams.width = (int) event.getX();
-                            mView.setLayoutParams(layoutParams);
+                            resizeBottom(currentRawY, layoutParams);
+                            resizeRight(currentRawX, layoutParams);
                         } else if (resizingBottomLeft) {
-                            mView.animate().x(bounds[0]).setDuration(0).start();
-                            layoutParams.height = (int) event.getY();
-                            layoutParams.width = (int) ((downRawX + originalRight) - event.getRawX());
-                            mView.setLayoutParams(layoutParams);
+                            resizeBottom(currentRawY, layoutParams);
+                            resizeLeft(currentRawX, layoutParams);
                         }
                         width = mView.getWidth();
                         height = mView.getHeight();
@@ -218,8 +213,8 @@ public class OnDragTouchListener implements View.OnTouchListener {
                 case MotionEvent.ACTION_DOWN:
                     originalX = v.getX();
                     originalY = v.getY();
-                    downRawX = event.getRawX();
-                    downRawY = event.getRawY();
+                    downRawX = currentRawX;
+                    downRawY = currentRawY;
                     relativeToViewX = event.getX();
                     relativeToViewY = event.getY();
                     corner = false;
@@ -233,6 +228,11 @@ public class OnDragTouchListener implements View.OnTouchListener {
                     resizingRight = false;
                     originalRight = v.getRight();
                     originalBottom = v.getBottom();
+                    ViewGroup.LayoutParams layoutParams = v.getLayoutParams();
+                    downWidth = layoutParams.width;
+                    downHeight = layoutParams.height;
+                    minX = originalX + (originalRight-widthRight-minWidth-widthLeft);
+                    minY = originalY + (originalBottom-heightTop-minHeight-heightTop);
                     if (relativeToViewX < widthLeft) {
                         if (relativeToViewY < heightTop) {
                             resizingTopLeft = true;
@@ -241,7 +241,6 @@ public class OnDragTouchListener implements View.OnTouchListener {
                             resizingBottomLeft = true;
                             corner = true;
                         } else {
-                            Log.d(TAG, "onTouch: LEFT EDGE");
                             resizingLeft = true;
                         }
                         resizing = true;
@@ -255,7 +254,6 @@ public class OnDragTouchListener implements View.OnTouchListener {
                             corner = true;
                         } else {
                             resizingRight = true;
-                            Log.d(TAG, "onTouch: RIGHT EDGE");
                         }
                         resizing = true;
                         mView.invalidate();
@@ -281,6 +279,67 @@ public class OnDragTouchListener implements View.OnTouchListener {
             }
         }
         return false;
+    }
+
+    private void resizeLeft(float currentRawX, ViewGroup.LayoutParams layoutParams) {
+        float bounds = currentRawX + downDX;
+        if (bounds < maxLeft) {
+            bounds = maxLeft;
+        }
+        if (bounds < maxLeft) bounds = maxLeft;
+        if (layoutParams.width > minWidth) {
+            mView.animate().x(bounds).setDuration(0).start();
+        }
+        if (bounds > maxLeft) {
+            layoutParams.width = (int) (downWidth + (downRawX - currentRawX));
+            if (layoutParams.width < minWidth) {
+                layoutParams.width = minWidth;
+                mView.animate().x(minX).setDuration(0).start();
+            }
+            mView.setLayoutParams(layoutParams);
+        }
+    }
+
+    private void resizeRight(float currentRawX, ViewGroup.LayoutParams layoutParams) {
+        layoutParams.width = (int) (downWidth + (currentRawX-downRawX));
+        if (layoutParams.width < minWidth) {
+            layoutParams.width = minWidth;
+        } else {
+            if ((originalX + widthLeft + layoutParams.width + widthRight) > maxRight) {
+                layoutParams.width = (int) (maxRight - widthRight - (originalX+widthLeft));
+            }
+        }
+        mView.setLayoutParams(layoutParams);
+    }
+
+    private void resizeTop(float currentRawY, ViewGroup.LayoutParams layoutParams) {
+        float bounds = currentRawY + downDY;
+        if (bounds < maxTop) {
+            bounds = maxTop;
+        }
+        if (layoutParams.height > minHeight) {
+            mView.animate().y(bounds).setDuration(0).start();
+        }
+        if (bounds > maxTop) {
+            layoutParams.height = (int) (downHeight + (downRawY - currentRawY));
+            if (layoutParams.height < minHeight) {
+                layoutParams.height = minHeight;
+                mView.animate().y(minY).setDuration(0).start();
+            }
+            mView.setLayoutParams(layoutParams);
+        }
+    }
+
+    private void resizeBottom(float currentRawY, ViewGroup.LayoutParams layoutParams) {
+        layoutParams.height = (int) (downHeight + (currentRawY-downRawY));
+        if (layoutParams.height < minHeight) {
+            layoutParams.height = minHeight;
+        } else {
+            if ((originalY + heightTop + layoutParams.height + heightBottom) > maxBottom) {
+                layoutParams.height = (int) (maxBottom - heightBottom - (originalY+heightTop));
+            }
+        }
+        mView.setLayoutParams(layoutParams);
     }
 
     private void onDragFinish() {

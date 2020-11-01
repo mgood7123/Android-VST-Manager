@@ -39,20 +39,26 @@ public class WindowView extends RelativeLayout {
 
     public void setDrag(VstView parent) {
         draggable = new OnDragTouchListener(this, parent);
-        draggable.widthLeft = widthLeft;
-        draggable.widthRight = widthRight;
-        draggable.heightTop = heightTop;
-        draggable.heightBottom = heightBottom;
+        draggable.widthLeft = touchZoneWidthLeft;
+        draggable.widthRight = touchZoneWidthRight;
+        draggable.heightTop = touchZoneHeightTop;
+        draggable.heightBottom = touchZoneHeightBottom;
         setOnTouchListener(draggable);
     }
 
     private static class Internal {}
     Internal Internal = new Internal();
-    public float widthLeft = 20.0f;
-    public float widthRight = 20.0f;
-    public float heightTop = 20.0f;
-    public float heightBottom = 20.0f;
-    public float titlebarHeight = 60.0f;
+    public float widthLeft = 10.0f;
+    public float widthRight = 10.0f;
+    public float heightTop = 10.0f;
+    public float heightBottom = 10.0f;
+    public float touchZoneWidthLeft = 200.0f;
+    public float touchZoneWidthRight = 200.0f;
+    public float touchZoneWidth;
+    public float touchZoneHeightTop = 200.0f;
+    public float touchZoneHeightBottom = 200.0f;
+    public float touchZoneHeight;
+    public float titlebarHeight = 160.0f;
 
     void getAttributeParameters(Context context, AttributeSet attrs, Resources.Theme theme) {
         if (attrs != null) {
@@ -76,6 +82,7 @@ public class WindowView extends RelativeLayout {
     private static final String TAG = "WindowView";
     Paint highlightPaint;
     Paint highlightCornerPaint;
+    Paint touchZonePaint;
     Paint regionPaint;
     Paint titleBarPaint;
 
@@ -96,6 +103,7 @@ public class WindowView extends RelativeLayout {
         }
         drawTitleBar(canvas, width, height, titleBarPaint);
         drawBorders(canvas, width, height, rp);
+        drawTouchZones(canvas, width, height, touchZonePaint);
     }
 
     void drawHighlight(Canvas canvas, int width, int height, Paint paint) {
@@ -108,9 +116,16 @@ public class WindowView extends RelativeLayout {
 
     void drawBorders(Canvas canvas, int width, int height, Paint paint) {
         canvas.drawRect(0, 0, widthLeft, height, paint);
-        canvas.drawRect(0, 0, width, heightTop, paint);
         canvas.drawRect(width - widthRight, 0, width, height, paint);
+        canvas.drawRect(0, 0, width, heightTop, paint);
         canvas.drawRect(0, height - heightBottom, width, height, paint);
+    }
+
+    void drawTouchZones(Canvas canvas, int width, int height, Paint paint) {
+        canvas.drawRect(0, 0, touchZoneWidthLeft, height, paint);
+        canvas.drawRect(width - touchZoneWidthRight, 0, width, height, paint);
+        canvas.drawRect(0, 0, width, touchZoneHeightTop, paint);
+        canvas.drawRect(0, height - touchZoneHeightBottom, width, height, paint);
     }
 
     private void init(Context context, AttributeSet attrs) {
@@ -118,11 +133,13 @@ public class WindowView extends RelativeLayout {
         root = (FrameLayout) inflate(context, R.layout.window, null);
         root.setTag(Internal);
         frame = root.findViewById(R.id.window_frame);
+        touchZoneWidth = touchZoneWidthLeft+touchZoneWidthRight;
+        touchZoneHeight = touchZoneHeightTop+touchZoneHeightBottom;
         windowContentLayout = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
-        windowContentLayout.topMargin = (int) Math.max(heightTop, titlebarHeight);
-        windowContentLayout.bottomMargin = (int) heightBottom;
-        windowContentLayout.leftMargin = (int) widthLeft;
-        windowContentLayout.rightMargin = (int) widthRight;
+        windowContentLayout.topMargin = (int) (Math.max(heightTop, titlebarHeight));
+        windowContentLayout.bottomMargin = (int) (heightBottom+touchZoneHeightBottom+touchZoneHeight);
+        windowContentLayout.leftMargin = (int) (widthLeft+touchZoneWidthLeft);
+        windowContentLayout.rightMargin = (int) (widthRight+touchZoneWidthRight+touchZoneWidth);
 
         content = root.findViewById(R.id.window_content);
         content.setLayoutParams(windowContentLayout);
@@ -132,14 +149,29 @@ public class WindowView extends RelativeLayout {
         highlightPaint = new Paint();
         highlightCornerPaint = new Paint();
         regionPaint = new Paint();
+        touchZonePaint = new Paint();
         titleBarPaint = new Paint();
 
         highlightPaint.setARGB(200, 0, 0, 255);
         highlightCornerPaint.setARGB(200, 255, 90, 0);
+        touchZonePaint.setARGB(160, 0, 90, 0);
         regionPaint.setARGB(255, 168, 168, 168);
         titleBarPaint.setARGB(255, 0,0,255);
     }
 
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        super.onMeasure(
+                MeasureSpec.makeMeasureSpec(
+                        MeasureSpec.getSize(widthMeasureSpec)+(int)(touchZoneWidth),
+                        MeasureSpec.getMode(widthMeasureSpec)
+                ),
+                MeasureSpec.makeMeasureSpec(
+                        MeasureSpec.getSize(heightMeasureSpec)+(int)(touchZoneHeight),
+                        MeasureSpec.getMode(heightMeasureSpec)
+                )
+        );
+    }
 
     @Override
     public void addView(View child, int index, ViewGroup.LayoutParams params) {
