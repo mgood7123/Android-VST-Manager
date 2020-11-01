@@ -3,19 +3,25 @@ package smallville7123.vstmanager.core.Views;
 import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Rect;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
-import android.widget.RelativeLayout;
 
 import smallville7123.vstmanager.core.R;
 
-public class WindowView extends RelativeLayout {
+import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
+
+public class WindowView extends FrameLayout {
 
     private OnDragTouchListener draggable;
+    private Context mContext;
+    private Rect region = new Rect();
 
     public WindowView(Context context) {
         super(context);
@@ -37,20 +43,29 @@ public class WindowView extends RelativeLayout {
         init(context, attrs);
     }
 
+    public float offsetLeft;
+    public float offsetRight;
+    public float offsetTop;
+    public float offsetBottom;
+    public int marginTop;
+    public int marginLeft;
+
+
     public void setDrag(VstView parent) {
-        draggable = new OnDragTouchListener(this, parent) {
-            @Override
-            public void updateOtherBounds(int w, int h) {
-                super.updateOtherBounds(w, h);
-//                windowContentLayout.width = w;
-//                windowContentLayout.height = h;
-//                content.setLayoutParams(windowContentLayout);
-            }
-        };
+        draggable = new OnDragTouchListener(this, parent);
         draggable.widthLeft = touchZoneWidthLeft;
         draggable.widthRight = touchZoneWidthRight;
         draggable.heightTop = touchZoneHeightTop;
         draggable.heightBottom = touchZoneHeightBottom;
+        draggable.marginTop = marginTop;
+        draggable.marginLeft = marginLeft;
+
+        draggable.offsetTop = offsetTop;
+        draggable.offsetBottom = offsetBottom;
+        draggable.offsetLeft = offsetLeft;
+        draggable.offsetRight = offsetRight;
+        draggable.onlyDragWithinWidthAndHeightRegions = true;
+
         setOnTouchListener(draggable);
     }
 
@@ -60,14 +75,14 @@ public class WindowView extends RelativeLayout {
     public float widthRight = 10.0f;
     public float heightTop = 10.0f;
     public float heightBottom = 10.0f;
-    public float touchZoneWidthLeft = 200.0f;
-    public float touchZoneWidthRight = 200.0f;
+    public float touchZoneWidthLeft = 100.0f;
+    public float touchZoneWidthRight = 100.0f;
+    public float touchZoneHeightTop = 100.0f;
+    public float touchZoneHeightBottom = 100.0f;
     public float touchZoneWidth;
-    public float touchZoneHeightTop = 200.0f;
-    public float touchZoneHeightBottom = 200.0f;
     public float touchZoneHeight;
     private float titlebarOffset;
-    public float titlebarHeight = 160.0f;
+    public float titlebarHeight = 100.0f;
 
     void getAttributeParameters(Context context, AttributeSet attrs, Resources.Theme theme) {
         if (attrs != null) {
@@ -102,32 +117,38 @@ public class WindowView extends RelativeLayout {
         int width = canvas.getWidth();
         int height = canvas.getHeight();
         Paint rp = regionPaint;
-        if (draggable.resizing) {
-            if (draggable.corner) {
-                rp = highlightCornerPaint;
-            } else {
-                rp = highlightPaint;
+        if (draggable != null) {
+            if (draggable.resizing) {
+                if (draggable.corner) {
+                    rp = highlightCornerPaint;
+                } else {
+                    rp = highlightPaint;
+                }
+                drawHighlight(canvas, width, height, rp);
             }
-            drawHighlight(canvas, width, height, rp);
         }
         drawTitleBar(canvas, width, height, titleBarPaint);
         drawBorders(canvas, width, height, rp);
-        drawTouchZones(canvas, width, height, touchZonePaint);
+//        drawTouchZones(canvas, width, height, touchZonePaint);
     }
 
     void drawHighlight(Canvas canvas, int width, int height, Paint paint) {
-        canvas.drawRect(0, 0, width, height, paint);
+        canvas.drawRect(offsetLeft, offsetTop, width-offsetRight, height-offsetBottom, paint);
     }
 
     void drawTitleBar(Canvas canvas, int width, int height, Paint paint) {
-        canvas.drawRect(0, titlebarOffset, width, titlebarOffset+titlebarHeight, paint);
+        canvas.drawRect(touchZoneWidthLeft, titlebarOffset, width-touchZoneWidthRight, titlebarOffset+titlebarHeight, paint);
     }
 
     void drawBorders(Canvas canvas, int width, int height, Paint paint) {
-        canvas.drawRect(0, 0, widthLeft, height, paint);
-        canvas.drawRect(width - widthRight, 0, width, height, paint);
-        canvas.drawRect(0, 0, width, heightTop, paint);
-        canvas.drawRect(0, height - heightBottom, width, height, paint);
+        // left
+        canvas.drawRect(touchZoneWidthLeft, touchZoneHeightTop, touchZoneWidthLeft-widthLeft, height-touchZoneHeightBottom, paint);
+        // right
+        canvas.drawRect(width - touchZoneWidthRight, touchZoneHeightTop, width-touchZoneWidthRight+widthRight, height-touchZoneHeightBottom, paint);
+        // top
+        canvas.drawRect(touchZoneWidthLeft-widthLeft, touchZoneHeightTop, width-touchZoneWidthRight+widthRight, touchZoneHeightTop-heightTop, paint);
+        // bottom
+        canvas.drawRect(touchZoneWidthLeft-widthLeft, height-touchZoneHeightBottom, width-touchZoneWidthRight+widthRight, height-touchZoneHeightBottom+heightBottom, paint);
     }
 
     void drawTouchZones(Canvas canvas, int width, int height, Paint paint) {
@@ -138,18 +159,29 @@ public class WindowView extends RelativeLayout {
     }
 
     private void init(Context context, AttributeSet attrs) {
+        mContext = context;
         Resources.Theme theme = context.getTheme();
         root = (FrameLayout) inflate(context, R.layout.window, null);
+        setBackgroundColor(Color.TRANSPARENT);
         root.setTag(Internal);
         frame = root.findViewById(R.id.window_frame);
         touchZoneWidth = touchZoneWidthLeft+touchZoneWidthRight;
         touchZoneHeight = touchZoneHeightTop+touchZoneHeightBottom;
         titlebarOffset = touchZoneHeightTop;
+        marginTop = (int) (titlebarOffset+titlebarHeight);
+        marginLeft = (int) titlebarHeight;
         windowContentLayout = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
         windowContentLayout.topMargin = (int) (titlebarOffset+titlebarHeight);
         windowContentLayout.bottomMargin = (int) (touchZoneHeightBottom);
         windowContentLayout.leftMargin = (int) (touchZoneWidthLeft);
         windowContentLayout.rightMargin = (int) (touchZoneWidth+touchZoneWidthRight);
+
+        offsetTop = touchZoneHeightTop-heightTop;
+        offsetBottom = touchZoneHeightBottom-heightBottom;
+        offsetLeft = touchZoneWidthLeft-widthLeft;
+        offsetRight = touchZoneWidthRight-widthRight;
+        setX(-offsetLeft);
+        setY(-offsetTop);
 
         content = root.findViewById(R.id.window_content);
         content.setLayoutParams(windowContentLayout);
@@ -164,7 +196,7 @@ public class WindowView extends RelativeLayout {
 
         highlightPaint.setARGB(200, 0, 0, 255);
         highlightCornerPaint.setARGB(200, 255, 90, 0);
-        touchZonePaint.setARGB(160, 0, 90, 0);
+        touchZonePaint.setARGB(60, 0, 90, 0);
         regionPaint.setARGB(255, 168, 168, 168);
         titleBarPaint.setARGB(255, 0,0,255);
     }
@@ -184,14 +216,16 @@ public class WindowView extends RelativeLayout {
     }
 
     @Override
+    public boolean onInterceptTouchEvent(MotionEvent ev) {
+        Log.d(TAG, "onInterceptTouchEvent");
+        bringToFront();
+        return false;
+    }
+
+    @Override
     public void addView(View child, int index, ViewGroup.LayoutParams params) {
         Object tag = child.getTag();
-        if (tag instanceof Internal) {
-            Log.d(TAG, "addView() called with INTERNAL: child = [" + child + "], index = [" + index + "], params = [" + params + "]");
-            super.addView(child, index, params);
-        } else {
-            Log.d(TAG, "addView() called with EXTERNAL: child = [" + child + "], index = [" + index + "], params = [" + params + "]");
-            content.addView(child, index, params);
-        }
+        if (tag instanceof Internal) super.addView(child, index, params);
+        else content.addView(child, -1, new LayoutParams(MATCH_PARENT, MATCH_PARENT));
     }
 }
