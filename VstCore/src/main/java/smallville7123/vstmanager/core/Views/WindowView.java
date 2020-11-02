@@ -7,12 +7,13 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewParent;
 import android.widget.FrameLayout;
 
+import smallville7123.taggable.Taggable;
 import smallville7123.vstmanager.core.R;
 
 import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
@@ -65,8 +66,6 @@ public class WindowView extends FrameLayout {
         draggable.offsetLeft = offsetLeft;
         draggable.offsetRight = offsetRight;
         draggable.onlyDragWithinWidthAndHeightRegions = true;
-
-        setOnTouchListener(draggable);
     }
 
     private static class Internal {}
@@ -103,7 +102,8 @@ public class WindowView extends FrameLayout {
 
     FrameLayout.LayoutParams windowContentLayout;
 
-    private static final String TAG = "WindowView";
+    public String TAG = Taggable.getTag(this);
+
     Paint highlightPaint;
     Paint highlightCornerPaint;
     Paint touchZonePaint;
@@ -215,11 +215,38 @@ public class WindowView extends FrameLayout {
         );
     }
 
+    boolean broughtToFront = false;
+
     @Override
     public boolean onInterceptTouchEvent(MotionEvent ev) {
-        Log.d(TAG, "onInterceptTouchEvent");
-        bringToFront();
-        return false;
+        if (broughtToFront) {
+            // process input
+            return false;
+        }
+        ViewParent parent = getParent();
+        if (parent instanceof VstView) {
+            VstView vstView = (VstView) parent;
+            if (
+                       vstView.currentTop == this
+                    || vstView.currentTop == null
+                    || !vstView.childHasBeenBroughtToFront
+            ) {
+                bringToFront();
+                broughtToFront = true;
+                vstView.childHasBeenBroughtToFront = true;
+                vstView.currentTop = this;
+                // process input
+                return false;
+            } else {
+                // do not process input
+                return true;
+            }
+        } else throw new RuntimeException("invalid parent");
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        return broughtToFront && draggable.onTouch(event);
     }
 
     @Override

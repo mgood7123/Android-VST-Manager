@@ -5,6 +5,7 @@ import android.content.res.Resources;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.util.TypedValue;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.RelativeLayout;
@@ -42,6 +43,30 @@ public class VstView extends RelativeLayout {
         mContext = context;
         defaultWindowWidth = toDP(getResources(), getDefaultWindowWidthDP);
         defaultWindowHeight = toDP(getResources(), getDefaultWindowHeightDP);
+    }
+
+    boolean childHasBeenBroughtToFront = false;
+    WindowView currentTop = null;
+
+    @Override
+    public boolean onInterceptTouchEvent(MotionEvent ev) {
+        // scan children and make each clickable
+        // do fifo pattern
+        // first child to be brought to front should make other children not respond
+        if (ev.getAction() == MotionEvent.ACTION_DOWN) {
+            childHasBeenBroughtToFront = false;
+            int childCount = getChildCount();
+            if (childCount != 0) {
+                for (int i = 0; i < childCount; i++) {
+                    View child = getChildAt(i);
+                    if (child instanceof WindowView) {
+                        ((WindowView) child).broughtToFront = false;
+                    }
+                }
+            }
+        }
+        // process input
+        return false;
     }
 
     @Override

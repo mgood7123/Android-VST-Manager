@@ -8,7 +8,7 @@ import android.view.ViewGroup;
 
 import androidx.annotation.CallSuper;
 
-public class OnDragTouchListener implements View.OnTouchListener {
+public class OnDragTouchListener {
 
     private static final String TAG = "OnDragTouchListener";
 
@@ -150,8 +150,7 @@ public class OnDragTouchListener implements View.OnTouchListener {
 
     }
 
-    @Override
-    public boolean onTouch(View v, MotionEvent event) {
+    public boolean onTouch(MotionEvent event) {
         Log.d(TAG, "MotionEvent.actionToString(event.getAction()) = [" + MotionEvent.actionToString(event.getAction()) + "]");
         float currentRawX = event.getRawX();
         float currentRawY = event.getRawY();
@@ -232,14 +231,25 @@ public class OnDragTouchListener implements View.OnTouchListener {
         } else {
             switch (event.getAction()) {
                 case MotionEvent.ACTION_DOWN:
-                    originalRight = v.getRight();
-                    originalBottom = v.getBottom();
-                    originalX = v.getX();
-                    originalY = v.getY();
-                    ViewGroup.LayoutParams layoutParams = v.getLayoutParams();
+                    originalRight = mView.getRight();
+                    originalBottom = mView.getBottom();
+                    originalX = mView.getX();
+                    originalY = mView.getY();
+                    ViewGroup.LayoutParams layoutParams = mView.getLayoutParams();
                     downWidth = layoutParams.width;
                     downHeight = layoutParams.height;
-                    if (new RectF(offsetLeft, offsetTop, downWidth, downHeight).contains(relativeToViewX-offsetLeft, relativeToViewY-offsetTop)) return false;
+                    RectF r = new RectF(
+                            marginLeft,
+                            marginTop,
+                            downWidth+widthRight,
+                            downHeight+heightBottom
+                    );
+                    boolean c = r.contains(
+                            relativeToViewX,
+                            relativeToViewY
+                    );
+
+                    if (c) return false;
                     downRawX = currentRawX;
                     downRawY = currentRawY;
                     minHeight = 100 + marginTop;
@@ -259,7 +269,7 @@ public class OnDragTouchListener implements View.OnTouchListener {
                         if (relativeToViewY < heightTop) {
                             resizingTopLeft = true;
                             corner = true;
-                        } else if ((v.getBottom()-relativeToViewY) < heightBottom) {
+                        } else if ((mView.getBottom()-relativeToViewY) < heightBottom) {
                             resizingBottomLeft = true;
                             corner = true;
                         } else {
@@ -267,11 +277,11 @@ public class OnDragTouchListener implements View.OnTouchListener {
                         }
                         resizing = true;
                         mView.invalidate();
-                    } else if ((v.getRight()-relativeToViewX) < widthRight) {
+                    } else if ((mView.getRight()-relativeToViewX) < widthRight) {
                         if (relativeToViewY < heightTop) {
                             resizingTopRight = true;
                             corner = true;
-                        } else if ((v.getBottom()-relativeToViewY) < heightBottom) {
+                        } else if ((mView.getBottom()-relativeToViewY) < heightBottom) {
                             resizingBottomRight = true;
                             corner = true;
                         } else {
@@ -283,7 +293,7 @@ public class OnDragTouchListener implements View.OnTouchListener {
                         resizingTop = true;
                         resizing = true;
                         mView.invalidate();
-                    } else if ((v.getBottom()-relativeToViewY) < heightBottom) {
+                    } else if ((mView.getBottom()-relativeToViewY) < heightBottom) {
                         resizingBottom = true;
                         resizing = true;
                         mView.invalidate();
