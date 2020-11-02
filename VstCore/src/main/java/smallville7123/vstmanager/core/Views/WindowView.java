@@ -5,24 +5,25 @@ import android.content.res.Resources;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.Rect;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewParent;
 import android.widget.FrameLayout;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import smallville7123.taggable.Taggable;
 import smallville7123.vstmanager.core.R;
 
 import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
+import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
 
 public class WindowView extends FrameLayout {
 
     private OnDragTouchListener draggable;
-    private Context mContext;
-    private Rect region = new Rect();
+    private TextView title;
 
     public WindowView(Context context) {
         super(context);
@@ -81,7 +82,7 @@ public class WindowView extends FrameLayout {
     public float touchZoneWidth;
     public float touchZoneHeight;
     private float titlebarOffset;
-    public float titlebarHeight = 100.0f;
+    public int titlebarHeight = 170;
 
     void getAttributeParameters(Context context, AttributeSet attrs, Resources.Theme theme) {
         if (attrs != null) {
@@ -96,8 +97,6 @@ public class WindowView extends FrameLayout {
         }
     }
 
-    FrameLayout root = null;
-    FrameLayout frame = null;
     FrameLayout content = null;
 
     FrameLayout.LayoutParams windowContentLayout;
@@ -127,17 +126,12 @@ public class WindowView extends FrameLayout {
                 drawHighlight(canvas, width, height, rp);
             }
         }
-        drawTitleBar(canvas, width, height, titleBarPaint);
         drawBorders(canvas, width, height, rp);
-        drawTouchZones(canvas, width, height, touchZonePaint);
+//        drawTouchZones(canvas, width, height, touchZonePaint);
     }
 
     void drawHighlight(Canvas canvas, int width, int height, Paint paint) {
         canvas.drawRect(offsetLeft, offsetTop, width-offsetRight, height-offsetBottom, paint);
-    }
-
-    void drawTitleBar(Canvas canvas, int width, int height, Paint paint) {
-        canvas.drawRect(touchZoneWidthLeft, titlebarOffset, width-touchZoneWidthRight, titlebarOffset+titlebarHeight, paint);
     }
 
     void drawBorders(Canvas canvas, int width, int height, Paint paint) {
@@ -159,35 +153,55 @@ public class WindowView extends FrameLayout {
     }
 
     private void init(Context context, AttributeSet attrs) {
-        mContext = context;
         Resources.Theme theme = context.getTheme();
-        root = (FrameLayout) inflate(context, R.layout.window, null);
+        FrameLayout root = (FrameLayout) inflate(context, R.layout.window, null);
         setBackgroundColor(Color.TRANSPARENT);
         root.setTag(Internal);
-        frame = root.findViewById(R.id.window_frame);
+
         touchZoneWidth = touchZoneWidthLeft+touchZoneWidthRight;
         touchZoneHeight = touchZoneHeightTop+touchZoneHeightBottom;
+
+        LinearLayout titleBar = new LinearLayout(context);
+        titleBar.setTag(Internal);
+        titleBar.setBackgroundColor(Color.BLUE);
+        LinearLayout.LayoutParams titleBarLayout = new LinearLayout.LayoutParams(MATCH_PARENT, titlebarHeight);
+        titleBarLayout.leftMargin = (int) (touchZoneWidthLeft);
+        titleBarLayout.rightMargin = (int) (touchZoneWidth+touchZoneWidthRight);
+
+        ViewGroup.LayoutParams titleLayout = new ViewGroup.LayoutParams(WRAP_CONTENT, MATCH_PARENT);
+        title = new TextView(context);
+        title.setText("Window Title");
+        titleBar.addView(title, titleLayout);
+        title.setTextSize(20.0f);
+
+        content = new FrameLayout(context);
+        content.setTag(Internal);
+        content.setBackgroundColor(Color.BLACK);
+        FrameLayout.LayoutParams contentLayout = new FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT);
+        contentLayout.bottomMargin = (int) (touchZoneHeightBottom);
+        contentLayout.leftMargin = (int) (touchZoneWidthLeft);
+        contentLayout.rightMargin = (int) (touchZoneWidth+touchZoneWidthRight);
+
+        LinearLayout ll = root.findViewById(R.id.window_sub_frame);
+        ll.addView(titleBar, titleBarLayout);
+        ll.addView(content, contentLayout);
+
         titlebarOffset = touchZoneHeightTop;
+        titleBar.setY(titlebarOffset);
+
         marginTop = (int) (titlebarOffset+titlebarHeight);
         marginLeft = (int) titlebarHeight;
-        windowContentLayout = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
-        windowContentLayout.topMargin = (int) (titlebarOffset+titlebarHeight);
-        windowContentLayout.bottomMargin = (int) (touchZoneHeightBottom);
-        windowContentLayout.leftMargin = (int) (touchZoneWidthLeft);
-        windowContentLayout.rightMargin = (int) (touchZoneWidth+touchZoneWidthRight);
+
 
         offsetTop = touchZoneHeightTop-heightTop;
         offsetBottom = touchZoneHeightBottom-heightBottom;
         offsetLeft = touchZoneWidthLeft-widthLeft;
         offsetRight = touchZoneWidthRight-widthRight;
+
         setX(-offsetLeft);
         setY(-offsetTop);
 
-        content = root.findViewById(R.id.window_content);
-        content.setBackgroundColor(Color.BLACK);
-        content.setLayoutParams(windowContentLayout);
-
-        addView(root, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
+        addView(root, new FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT));
 
         highlightPaint = new Paint();
         highlightCornerPaint = new Paint();

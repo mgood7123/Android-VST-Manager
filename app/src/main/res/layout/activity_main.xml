@@ -19,29 +19,16 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:background="@color/purple_500">
-
-            <FrameLayout
+            <Button
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:background="#FF00FF00">
-
-                <Button
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:text="EXAMPLE VST VIEW A"
-                    android:textSize="30sp" />
-            </FrameLayout>
-            <FrameLayout
+                android:text="EXAMPLE VST VIEW A"
+                android:textSize="30sp" />
+            <Button
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:background="#FF00FF00">
-
-                <Button
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:text="EXAMPLE VST VIEW B"
-                    android:textSize="30sp" />
-            </FrameLayout>
+                android:text="EXAMPLE VST VIEW B"
+                android:textSize="30sp" />
         </smallville7123.vstmanager.core.Views.VstView>
     </FrameLayout>
 
