@@ -74,10 +74,10 @@ public class WindowView extends FrameLayout {
     public float widthRight = 10.0f;
     public float heightTop = 10.0f;
     public float heightBottom = 10.0f;
-    public float touchZoneWidthLeft = 100.0f;
-    public float touchZoneWidthRight = 100.0f;
-    public float touchZoneHeightTop = 100.0f;
-    public float touchZoneHeightBottom = 100.0f;
+    public float touchZoneWidthLeft = 80.0f;
+    public float touchZoneWidthRight = 80.0f;
+    public float touchZoneHeightTop = 80.0f;
+    public float touchZoneHeightBottom = 80.0f;
     public float touchZoneWidth;
     public float touchZoneHeight;
     private float titlebarOffset;
@@ -129,7 +129,7 @@ public class WindowView extends FrameLayout {
         }
         drawTitleBar(canvas, width, height, titleBarPaint);
         drawBorders(canvas, width, height, rp);
-//        drawTouchZones(canvas, width, height, touchZonePaint);
+        drawTouchZones(canvas, width, height, touchZonePaint);
     }
 
     void drawHighlight(Canvas canvas, int width, int height, Paint paint) {
@@ -184,6 +184,7 @@ public class WindowView extends FrameLayout {
         setY(-offsetTop);
 
         content = root.findViewById(R.id.window_content);
+        content.setBackgroundColor(Color.BLACK);
         content.setLayoutParams(windowContentLayout);
 
         addView(root, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
