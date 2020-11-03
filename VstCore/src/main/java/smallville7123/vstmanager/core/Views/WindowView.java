@@ -175,34 +175,37 @@ public class WindowView extends FrameLayout {
 
         titleBarContent = setupTitleBarContent(root);
         View titleBar = inflate(context, R.layout.titlebar, null);
+        View titleBar_maximized = inflate(context, R.layout.titlebar_maximized, null);
         titleBar.findViewById(R.id.maximize).setOnClickListener(v -> {
             ViewGroup.LayoutParams layoutParams = getLayoutParams();
-            if (!maximized) {
-                savedX = getX();
-                savedY = getY();
-                savedWidth = layoutParams.width;
-                savedHeight = layoutParams.height;
+            savedX = getX();
+            savedY = getY();
+            savedWidth = layoutParams.width;
+            savedHeight = layoutParams.height;
 
-                setX(-offsetLeft);
-                setY(-offsetTop);
-                int width = ((ViewGroup) getParent()).getWidth();
-                int height = ((ViewGroup) getParent()).getHeight();
+            setX(-offsetLeft);
+            setY(-offsetTop);
+            int width = ((ViewGroup) getParent()).getWidth();
+            int height = ((ViewGroup) getParent()).getHeight();
 
-                layoutParams.width = (int) (width - widthRight - (touchZoneWidthRight - offsetRight));
-                layoutParams.height = (int) (height - heightBottom - (touchZoneHeightBottom - offsetBottom));
-                setLayoutParams(layoutParams);
+            layoutParams.width = (int) (width - widthRight - (touchZoneWidthRight - offsetRight));
+            layoutParams.height = (int) (height - heightBottom - (touchZoneHeightBottom - offsetBottom));
+            setLayoutParams(layoutParams);
 
-                maximized = true;
-            } else {
-                setX(savedX);
-                setY(savedY);
+            maximized = true;
+            setTitleBar(titleBar_maximized);
+        });
+        titleBar_maximized.findViewById(R.id.restore).setOnClickListener(v -> {
+            ViewGroup.LayoutParams layoutParams = getLayoutParams();
+            setX(savedX);
+            setY(savedY);
 
-                layoutParams.width = savedWidth;
-                layoutParams.height = savedHeight;
-                setLayoutParams(layoutParams);
+            layoutParams.width = savedWidth;
+            layoutParams.height = savedHeight;
+            setLayoutParams(layoutParams);
 
-                maximized = false;
-            }
+            maximized = false;
+            setTitleBar(titleBar);
         });
         setTitleBar(titleBar);
         setWindowContent(root);
@@ -254,6 +257,9 @@ public class WindowView extends FrameLayout {
 
     private void setTitleBar(View titleBar) {
         titleBar.setBackgroundColor(Color.BLUE);
+        if (titleBarContent.getChildAt(0) != null) {
+            titleBarContent.removeViewAt(0);
+        }
         titleBarContent.addView(titleBar);
     }
 
