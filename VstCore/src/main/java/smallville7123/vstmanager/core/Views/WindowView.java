@@ -11,14 +11,14 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewParent;
 import android.widget.FrameLayout;
-import android.widget.LinearLayout;
 import android.widget.TextView;
+
+import androidx.constraintlayout.widget.ConstraintLayout;
 
 import smallville7123.taggable.Taggable;
 import smallville7123.vstmanager.core.R;
 
 import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
-import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
 
 public class WindowView extends FrameLayout {
 
@@ -99,7 +99,7 @@ public class WindowView extends FrameLayout {
 
     FrameLayout content = null;
 
-    FrameLayout.LayoutParams windowContentLayout;
+    LayoutParams windowContentLayout;
 
     public String TAG = Taggable.getTag(this);
 
@@ -152,57 +152,25 @@ public class WindowView extends FrameLayout {
         canvas.drawRect(0, height - touchZoneHeightBottom, width, height, paint);
     }
 
+    ConstraintLayout root;
+    Context mContext;
+    FrameLayout titleBarContent;
+
     private void init(Context context, AttributeSet attrs) {
-        Resources.Theme theme = context.getTheme();
-        FrameLayout root = (FrameLayout) inflate(context, R.layout.window, null);
-        setBackgroundColor(Color.TRANSPARENT);
-        root.setTag(Internal);
+        getRootLayout(context);
+        addView(root, new LayoutParams(MATCH_PARENT, MATCH_PARENT));
 
-        touchZoneWidth = touchZoneWidthLeft+touchZoneWidthRight;
-        touchZoneHeight = touchZoneHeightTop+touchZoneHeightBottom;
+        titleBarContent = setupTitleBarContent(root);
+        View titleBar = inflate(context, R.layout.titlebar, null);
+        setTitleBar(titleBar);
+        setWindowContent(root);
+        setPaint();
 
-        LinearLayout titleBar = new LinearLayout(context);
-        titleBar.setTag(Internal);
-        titleBar.setBackgroundColor(Color.BLUE);
-        LinearLayout.LayoutParams titleBarLayout = new LinearLayout.LayoutParams(MATCH_PARENT, titlebarHeight);
-        titleBarLayout.leftMargin = (int) (touchZoneWidthLeft);
-        titleBarLayout.rightMargin = (int) (touchZoneWidth+touchZoneWidthRight);
+        // we could do:
+        // toolkit.currentFrame().provideCustomCloseButton(new myCloseButton(myResources));
+    }
 
-        ViewGroup.LayoutParams titleLayout = new ViewGroup.LayoutParams(WRAP_CONTENT, MATCH_PARENT);
-        title = new TextView(context);
-        title.setText("Window Title");
-        titleBar.addView(title, titleLayout);
-        title.setTextSize(20.0f);
-
-        content = new FrameLayout(context);
-        content.setTag(Internal);
-        content.setBackgroundColor(Color.BLACK);
-        FrameLayout.LayoutParams contentLayout = new FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT);
-        contentLayout.bottomMargin = (int) (touchZoneHeightBottom);
-        contentLayout.leftMargin = (int) (touchZoneWidthLeft);
-        contentLayout.rightMargin = (int) (touchZoneWidth+touchZoneWidthRight);
-
-        LinearLayout ll = root.findViewById(R.id.window_sub_frame);
-        ll.addView(titleBar, titleBarLayout);
-        ll.addView(content, contentLayout);
-
-        titlebarOffset = touchZoneHeightTop;
-        titleBar.setY(titlebarOffset);
-
-        marginTop = (int) (titlebarOffset+titlebarHeight);
-        marginLeft = (int) titlebarHeight;
-
-
-        offsetTop = touchZoneHeightTop-heightTop;
-        offsetBottom = touchZoneHeightBottom-heightBottom;
-        offsetLeft = touchZoneWidthLeft-widthLeft;
-        offsetRight = touchZoneWidthRight-widthRight;
-
-        setX(-offsetLeft);
-        setY(-offsetTop);
-
-        addView(root, new FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT));
-
+    private void setPaint() {
         highlightPaint = new Paint();
         highlightCornerPaint = new Paint();
         regionPaint = new Paint();
@@ -214,6 +182,60 @@ public class WindowView extends FrameLayout {
         touchZonePaint.setARGB(60, 0, 90, 0);
         regionPaint.setARGB(255, 168, 168, 168);
         titleBarPaint.setARGB(255, 0,0,255);
+    }
+
+    private void getRootLayout(Context context) {
+        mContext = context;
+        Resources.Theme theme = context.getTheme();
+        root = (ConstraintLayout) inflate(context, R.layout.window, null);
+        root.setTag(Internal);
+        setBackgroundColor(Color.TRANSPARENT);
+
+        setVariables();
+        setX(-offsetLeft);
+        setY(-offsetTop);
+    }
+
+    private void setVariables() {
+        touchZoneWidth = touchZoneWidthLeft+touchZoneWidthRight;
+        touchZoneHeight = touchZoneHeightTop+touchZoneHeightBottom;
+        titlebarOffset = touchZoneHeightTop;
+        marginTop = (int) (titlebarOffset+titlebarHeight);
+        marginLeft = (int) titlebarHeight;
+
+
+        offsetTop = touchZoneHeightTop-heightTop;
+        offsetBottom = touchZoneHeightBottom-heightBottom;
+        offsetLeft = touchZoneWidthLeft-widthLeft;
+        offsetRight = touchZoneWidthRight-widthRight;
+    }
+
+    private void setTitleBar(View titleBar) {
+        titleBar.setBackgroundColor(Color.BLUE);
+        titleBarContent.addView(titleBar);
+    }
+
+    private FrameLayout setupTitleBarContent(ConstraintLayout root) {
+        FrameLayout titlebar_content = root.findViewById(R.id.titlebar_content);
+        ConstraintLayout.LayoutParams titlebar_contentLayoutParams = (ConstraintLayout.LayoutParams) titlebar_content.getLayoutParams();
+        titlebar_contentLayoutParams.height = titlebarHeight;
+        titlebar_contentLayoutParams.topMargin = (int) titlebarOffset;
+        titlebar_contentLayoutParams.leftMargin = (int) (touchZoneWidthLeft);
+        titlebar_contentLayoutParams.rightMargin = (int) (touchZoneWidth+touchZoneWidthRight);
+        titlebar_content.setLayoutParams(titlebar_contentLayoutParams);
+        return titlebar_content;
+    }
+
+    FrameLayout window_content;
+
+    private void setWindowContent(ConstraintLayout root) {
+        window_content = root.findViewById(R.id.window_content);
+        window_content.setBackgroundColor(Color.BLACK);
+        ConstraintLayout.LayoutParams window_contentLayout = (ConstraintLayout.LayoutParams) window_content.getLayoutParams();
+        window_contentLayout.bottomMargin = (int) (touchZoneHeightBottom);
+        window_contentLayout.leftMargin = (int) (touchZoneWidthLeft);
+        window_contentLayout.rightMargin = (int) (touchZoneWidth+touchZoneWidthRight);
+        window_content.setLayoutParams(window_contentLayout);
     }
 
     @Override
@@ -268,6 +290,6 @@ public class WindowView extends FrameLayout {
     public void addView(View child, int index, ViewGroup.LayoutParams params) {
         Object tag = child.getTag();
         if (tag instanceof Internal) super.addView(child, index, params);
-        else content.addView(child, -1, new LayoutParams(MATCH_PARENT, MATCH_PARENT));
+        else window_content.addView(child, -1, new LayoutParams(MATCH_PARENT, MATCH_PARENT));
     }
 }
