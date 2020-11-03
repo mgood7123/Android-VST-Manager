@@ -156,14 +156,14 @@ public class OnDragTouchListener {
         float currentRawY = event.getRawY();
         relativeToViewX = event.getX();
         relativeToViewY = event.getY();
-        if (isDragging) {
-            switch (event.getAction()) {
-                case MotionEvent.ACTION_CANCEL:
-                case MotionEvent.ACTION_UP:
-                    if (resizing) {
-                        resizing = false;
-                        mView.invalidate();
-                    }
+        switch (event.getAction()) {
+            case MotionEvent.ACTION_CANCEL:
+            case MotionEvent.ACTION_UP:
+                if (resizing) {
+                    resizing = false;
+                    mView.invalidate();
+                }
+                if (isDragging) {
                     upRawX = currentRawX;
                     upRawY = currentRawY;
                     upDX = upRawX - downRawX;
@@ -171,134 +171,121 @@ public class OnDragTouchListener {
                     if ((Math.abs(upDX) < CLICK_DRAG_TOLERANCE) && (Math.abs(upDY) < CLICK_DRAG_TOLERANCE)) {
                         mView.animate().x(originalX).y(originalY).setDuration(0).start();
                     }
-                    onDragFinish();
-                    break;
-                case MotionEvent.ACTION_MOVE:
-                    if (!resizing) {
-                        float[] bounds = new float[4];
-                        // LEFT
-                        bounds[0] = currentRawX + downDX;
-                        if (bounds[0] < maxLeft-offsetLeft) {
-                            bounds[0] = maxLeft-offsetLeft;
-                        }
-                        // RIGHT
-                        bounds[2] = bounds[0] + originalRight;
-                        if (bounds[2] > maxRight+offsetRight) {
-                            bounds[2] = maxRight+offsetRight;
-                            bounds[0] = (maxRight+offsetRight) - originalRight;
-                        }
-                        // TOP
-                        bounds[1] = currentRawY + downDY;
-                        if (bounds[1] < maxTop-offsetTop) {
-                            bounds[1] = maxTop-offsetTop;
-                        }
-                        // BOTTOM
-                        bounds[3] = bounds[1] + originalBottom;
-                        if (bounds[3] > maxBottom+offsetBottom) {
-                            bounds[3] = maxBottom+offsetBottom;
-                            bounds[1] = (maxBottom+offsetBottom) - originalBottom;
-                        }
-                        mView.animate().x(bounds[0]).y(bounds[1]).setDuration(0).start();
-                    } else {
-                        ViewGroup.LayoutParams layoutParams = mView.getLayoutParams();
-                        if (resizingLeft) {
-                            resizeLeft(currentRawX, layoutParams);
-                        } else if (resizingRight) {
-                            resizeRight(currentRawX, layoutParams);
-                        } else if (resizingTop) {
-                            resizeTop(currentRawY, layoutParams);
-                        } else if (resizingBottom) {
-                            resizeBottom(currentRawY, layoutParams);
-                        } else if (resizingTopRight) {
-                            resizeTop(currentRawY, layoutParams);
-                            resizeRight(currentRawX, layoutParams);
-                        } else if (resizingTopLeft) {
-                            resizeTop(currentRawY, layoutParams);
-                            resizeLeft(currentRawX, layoutParams);
-                        } else if (resizingBottomRight) {
-                            resizeBottom(currentRawY, layoutParams);
-                            resizeRight(currentRawX, layoutParams);
-                        } else if (resizingBottomLeft) {
-                            resizeBottom(currentRawY, layoutParams);
-                            resizeLeft(currentRawX, layoutParams);
-                        }
-                        width = mView.getWidth();
-                        height = mView.getHeight();
+                }
+                onDragFinish();
+                return true;
+            case MotionEvent.ACTION_MOVE:
+                if (!resizing) {
+                    float[] bounds = new float[4];
+                    // LEFT
+                    bounds[0] = currentRawX + downDX;
+                    if (bounds[0] < maxLeft-offsetLeft) {
+                        bounds[0] = maxLeft-offsetLeft;
                     }
-                    break;
-            }
-            return true;
-        } else {
-            switch (event.getAction()) {
-                case MotionEvent.ACTION_DOWN:
-                    originalRight = mView.getRight();
-                    originalBottom = mView.getBottom();
-                    originalX = mView.getX();
-                    originalY = mView.getY();
+                    // RIGHT
+                    bounds[2] = bounds[0] + originalRight;
+                    if (bounds[2] > maxRight+offsetRight) {
+                        bounds[2] = maxRight+offsetRight;
+                        bounds[0] = (maxRight+offsetRight) - originalRight;
+                    }
+                    // TOP
+                    bounds[1] = currentRawY + downDY;
+                    if (bounds[1] < maxTop-offsetTop) {
+                        bounds[1] = maxTop-offsetTop;
+                    }
+                    // BOTTOM
+                    bounds[3] = bounds[1] + originalBottom;
+                    if (bounds[3] > maxBottom+offsetBottom) {
+                        bounds[3] = maxBottom+offsetBottom;
+                        bounds[1] = (maxBottom+offsetBottom) - originalBottom;
+                    }
+                    mView.animate().x(bounds[0]).y(bounds[1]).setDuration(0).start();
+                } else {
                     ViewGroup.LayoutParams layoutParams = mView.getLayoutParams();
-                    downWidth = layoutParams.width;
-                    downHeight = layoutParams.height;
-                    RectF r = new RectF(
-                            marginLeft,
-                            marginTop,
-                            downWidth+widthRight,
-                            downHeight+heightBottom
-                    );
-                    boolean c = r.contains(
-                            relativeToViewX,
-                            relativeToViewY
-                    );
-
-                    if (c) return false;
-                    downRawX = currentRawX;
-                    downRawY = currentRawY;
-                    minHeight = 100 + marginTop;
-                    minWidth = 100 + marginLeft;
-                    corner = false;
-                    resizingTop = false;
-                    resizingTopLeft = false;
-                    resizingTopRight = false;
-                    resizingBottom = false;
-                    resizingBottomLeft = false;
-                    resizingBottomRight = false;
-                    resizingLeft = false;
-                    resizingRight = false;
-                    minX = originalX + (originalRight-widthRight-minWidth-widthLeft);
-                    minY = originalY + (originalBottom-heightTop-minHeight-heightTop);
-                    if (relativeToViewX < widthLeft) {
-                        if (relativeToViewY < heightTop) {
-                            resizingTopLeft = true;
-                            corner = true;
-                        } else if ((mView.getBottom()-relativeToViewY) < heightBottom) {
-                            resizingBottomLeft = true;
-                            corner = true;
-                        } else {
-                            resizingLeft = true;
-                        }
-                        resizing = true;
-                        mView.invalidate();
-                    } else if ((mView.getRight()-relativeToViewX) < widthRight) {
-                        if (relativeToViewY < heightTop) {
-                            resizingTopRight = true;
-                            corner = true;
-                        } else if ((mView.getBottom()-relativeToViewY) < heightBottom) {
-                            resizingBottomRight = true;
-                            corner = true;
-                        } else {
-                            resizingRight = true;
-                        }
-                        resizing = true;
-                        mView.invalidate();
-                    } else if (relativeToViewY < heightTop) {
-                        resizingTop = true;
-                        resizing = true;
-                        mView.invalidate();
-                    } else if ((mView.getBottom()-relativeToViewY) < heightBottom) {
-                        resizingBottom = true;
-                        resizing = true;
-                        mView.invalidate();
+                    if (resizingLeft) {
+                        resizeLeft(currentRawX, layoutParams);
+                    } else if (resizingRight) {
+                        resizeRight(currentRawX, layoutParams);
+                    } else if (resizingTop) {
+                        resizeTop(currentRawY, layoutParams);
+                    } else if (resizingBottom) {
+                        resizeBottom(currentRawY, layoutParams);
+                    } else if (resizingTopRight) {
+                        resizeTop(currentRawY, layoutParams);
+                        resizeRight(currentRawX, layoutParams);
+                    } else if (resizingTopLeft) {
+                        resizeTop(currentRawY, layoutParams);
+                        resizeLeft(currentRawX, layoutParams);
+                    } else if (resizingBottomRight) {
+                        resizeBottom(currentRawY, layoutParams);
+                        resizeRight(currentRawX, layoutParams);
+                    } else if (resizingBottomLeft) {
+                        resizeBottom(currentRawY, layoutParams);
+                        resizeLeft(currentRawX, layoutParams);
                     }
+                    width = mView.getWidth();
+                    height = mView.getHeight();
+                }
+                return true;
+            case MotionEvent.ACTION_DOWN:
+                originalRight = mView.getRight();
+                originalBottom = mView.getBottom();
+                originalX = mView.getX();
+                originalY = mView.getY();
+                ViewGroup.LayoutParams layoutParams = mView.getLayoutParams();
+                downWidth = layoutParams.width;
+                downHeight = layoutParams.height;
+                downRawX = currentRawX;
+                downRawY = currentRawY;
+                minHeight = 100 + marginTop;
+                minWidth = 100 + marginLeft;
+                corner = false;
+                resizingTop = false;
+                resizingTopLeft = false;
+                resizingTopRight = false;
+                resizingBottom = false;
+                resizingBottomLeft = false;
+                resizingBottomRight = false;
+                resizingLeft = false;
+                resizingRight = false;
+                minX = originalX + (originalRight-widthRight-minWidth-widthLeft);
+                minY = originalY + (originalBottom-heightTop-minHeight-heightTop);
+                if (relativeToViewX < widthLeft) {
+                    if (relativeToViewY < heightTop) {
+                        resizingTopLeft = true;
+                        corner = true;
+                    } else if ((mView.getBottom()-relativeToViewY) < heightBottom) {
+                        resizingBottomLeft = true;
+                        corner = true;
+                    } else {
+                        resizingLeft = true;
+                    }
+                    resizing = true;
+                    mView.invalidate();
+                } else if ((mView.getRight()-relativeToViewX) < widthRight) {
+                    if (relativeToViewY < heightTop) {
+                        resizingTopRight = true;
+                        corner = true;
+                    } else if ((mView.getBottom()-relativeToViewY) < heightBottom) {
+                        resizingBottomRight = true;
+                        corner = true;
+                    } else {
+                        resizingRight = true;
+                    }
+                    resizing = true;
+                    mView.invalidate();
+                } else if (relativeToViewY < heightTop) {
+                    resizingTop = true;
+                    resizing = true;
+                    mView.invalidate();
+                } else if ((mView.getBottom()-relativeToViewY) < heightBottom) {
+                    resizingBottom = true;
+                    resizing = true;
+                    mView.invalidate();
+                } else if (relativeToViewY <= marginTop) {
                     isDragging = true;
+                }
+                if (resizing || isDragging) {
                     if (!isInitialized) {
                         updateBounds();
                     }
@@ -308,9 +295,10 @@ public class OnDragTouchListener {
                         mOnDragActionListener.onDragStart(mView);
                     }
                     return true;
-            }
+                }
+            default:
+                return false;
         }
-        return false;
     }
 
     private void resizeLeft(float currentRawX, ViewGroup.LayoutParams layoutParams) {
