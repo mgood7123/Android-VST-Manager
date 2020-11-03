@@ -113,8 +113,8 @@ public class WindowView extends FrameLayout {
     @Override
     public void onDrawForeground(Canvas canvas) {
         super.onDrawForeground(canvas);
-        int width = canvas.getWidth();
-        int height = canvas.getHeight();
+        int width = getWidth();
+        int height = getHeight();
         Paint rp = regionPaint;
         if (draggable != null) {
             if (draggable.isResizing) {

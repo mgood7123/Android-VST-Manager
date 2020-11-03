@@ -298,9 +298,7 @@ public class OnDragTouchListener {
                     isDragging = true;
                 }
                 if (isResizing || isDragging) {
-                    if (!isInitialized) {
-                        updateBounds();
-                    }
+                    updateBounds();
                     downDX = originalX - downRawX;
                     downDY = originalY - downRawY;
                     if (mOnDragActionListener != null) {
