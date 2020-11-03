@@ -146,22 +146,64 @@ public class WindowView extends FrameLayout {
     }
 
     void drawTouchZones(Canvas canvas, int width, int height, Paint paint) {
+        // left
         canvas.drawRect(0, 0, touchZoneWidthLeft, height, paint);
+        // right
         canvas.drawRect(width - touchZoneWidthRight, 0, width, height, paint);
+        // top
         canvas.drawRect(0, 0, width, touchZoneHeightTop, paint);
+        // bottom
         canvas.drawRect(0, height - touchZoneHeightBottom, width, height, paint);
     }
 
     ConstraintLayout root;
+    LayoutParams rootLayoutParams;
     Context mContext;
     FrameLayout titleBarContent;
 
+    boolean maximized = false;
+
+    float savedX;
+    float savedY;
+    int savedWidth;
+    int savedHeight;
+
     private void init(Context context, AttributeSet attrs) {
         getRootLayout(context);
-        addView(root, new LayoutParams(MATCH_PARENT, MATCH_PARENT));
+        rootLayoutParams = new LayoutParams(MATCH_PARENT, MATCH_PARENT);
+        addView(root, rootLayoutParams);
 
         titleBarContent = setupTitleBarContent(root);
         View titleBar = inflate(context, R.layout.titlebar, null);
+        titleBar.findViewById(R.id.maximize).setOnClickListener(v -> {
+            ViewGroup.LayoutParams layoutParams = getLayoutParams();
+            if (!maximized) {
+                savedX = getX();
+                savedY = getY();
+                savedWidth = layoutParams.width;
+                savedHeight = layoutParams.height;
+
+                setX(-offsetLeft);
+                setY(-offsetTop);
+                int width = ((ViewGroup) getParent()).getWidth();
+                int height = ((ViewGroup) getParent()).getHeight();
+
+                layoutParams.width = (int) (width - widthRight - (touchZoneWidthRight - offsetRight));
+                layoutParams.height = (int) (height - heightBottom - (touchZoneHeightBottom - offsetBottom));
+                setLayoutParams(layoutParams);
+
+                maximized = true;
+            } else {
+                setX(savedX);
+                setY(savedY);
+
+                layoutParams.width = savedWidth;
+                layoutParams.height = savedHeight;
+                setLayoutParams(layoutParams);
+
+                maximized = false;
+            }
+        });
         setTitleBar(titleBar);
         setWindowContent(root);
         setPaint();
@@ -283,7 +325,11 @@ public class WindowView extends FrameLayout {
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        return broughtToFront && draggable.onTouch(event);
+        if (broughtToFront) {
+            if (!maximized) draggable.onTouch(event);
+            return true;
+        }
+        return false;
     }
 
     @Override
