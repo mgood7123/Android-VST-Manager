@@ -117,7 +117,7 @@ public class WindowView extends FrameLayout {
         int height = canvas.getHeight();
         Paint rp = regionPaint;
         if (draggable != null) {
-            if (draggable.resizing) {
+            if (draggable.isResizing) {
                 if (draggable.corner) {
                     rp = highlightCornerPaint;
                 } else {
