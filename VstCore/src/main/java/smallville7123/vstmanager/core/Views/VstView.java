@@ -3,6 +3,7 @@ package smallville7123.vstmanager.core.Views;
 import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.util.TypedValue;
@@ -46,21 +47,18 @@ public class VstView extends RelativeLayout {
         mContext = context;
         defaultWindowWidth = toDP(getResources(), getDefaultWindowWidthDP);
         defaultWindowHeight = toDP(getResources(), getDefaultWindowHeightDP);
-        setOnLongClickListener(v -> {
-            Log.d(TAG, "onLongClick() called with: v = [" + v + "]");
-            // last index is child at front
-            if (bm != null) bm.recycle();
-            View child = ((ViewGroup) getParent()).getChildAt(0);
-            if (child instanceof ImageView) background = (ImageView) child;
-            if (background != null) {
-                ViewRenderer.getBitmapFromView(this, background);
-            }
-//            View child = getChildAt(getChildCount()-1);
-//            if (child instanceof WindowView) {
-//                bm = ((WindowView) child).getBitmapFromView(background);
+//        setOnLongClickListener(v -> {
+//            Log.d(TAG, "onLongClick() called with: v = [" + v + "]");
+//
+//            if (bm != null) bm.recycle();
+//            if (background != null) {
+//                View child = ((ViewGroup) getParent()).getChildAt(0);
+//                if (child instanceof ImageView) background = (ImageView) child;
 //            }
-            return false;
-        });
+//            bm = ViewCompositor.composite(this, background);
+//
+//            return false;
+//        });
     }
 
     boolean childHasBeenBroughtToFront = false;
@@ -83,8 +81,37 @@ public class VstView extends RelativeLayout {
                 }
             }
         }
+
+        drawBitmap();
+
         // process input
         return false;
+    }
+
+    void drawBitmap() {
+        if (background == null) {
+            View child = ((ViewGroup) getParent()).getChildAt(0);
+            if (child instanceof ImageView) background = (ImageView) child;
+        }
+        if (bm != null) bm.recycle();
+        bm = ViewCompositor.composite(this, background);
+    }
+
+    private Bitmap getBitmap(View child) {
+        Bitmap childBitmap = Bitmap.createBitmap(
+                child.getWidth(),
+                child.getHeight(),
+                Bitmap.Config.ARGB_8888
+        );
+        Canvas childCanvas = new Canvas(childBitmap);
+        child.draw(childCanvas);
+        return childBitmap;
+    }
+
+    @Override
+    protected void onDraw(Canvas canvas) {
+        super.onDraw(canvas);
+        drawBitmap();
     }
 
     static class Internal {};

@@ -200,7 +200,7 @@ public class OnDragTouchListener {
                         bounds[1] = (maxBottom + offsetBottom) - originalBottom;
                     }
                     mView.animate().x(bounds[0]).y(bounds[1]).setDuration(0).start();
-                    return false;
+                    return true;
                 } else if (isResizing && !isDragging) {
                     ViewGroup.LayoutParams layoutParams = mView.getLayoutParams();
                     if (resizingLeft) {
@@ -262,42 +262,35 @@ public class OnDragTouchListener {
                     resizingTopLeft = true;
                     corner = true;
                     isResizing = true;
-                    mView.invalidate();
                 } else if (relativeToViewX < wl && (mView.getBottom() - relativeToViewY) < hb) {
                     resizingBottomLeft = true;
                     corner = true;
                     isResizing = true;
-                    mView.invalidate();
                 } else if ((mView.getRight() - relativeToViewX) < wr && relativeToViewY < ht) {
                     resizingTopRight = true;
                     corner = true;
                     isResizing = true;
-                    mView.invalidate();
                 } else if ((mView.getRight() - relativeToViewX) < wr && (mView.getBottom() - relativeToViewY) < hb) {
                     resizingBottomRight = true;
                     corner = true;
                     isResizing = true;
-                    mView.invalidate();
                 } else if (relativeToViewX < widthLeft) {
                     resizingLeft = true;
                     isResizing = true;
-                    mView.invalidate();
                 } else if ((mView.getRight() - relativeToViewX) < widthRight) {
                     resizingRight = true;
                     isResizing = true;
-                    mView.invalidate();
                 } else if (relativeToViewY < heightTop) {
                     resizingTop = true;
                     isResizing = true;
-                    mView.invalidate();
                 } else if ((mView.getBottom() - relativeToViewY) < heightBottom) {
                     resizingBottom = true;
                     isResizing = true;
-                    mView.invalidate();
                 } else if (relativeToViewY <= marginTop) {
                     isDragging = true;
                 }
                 if (isResizing || isDragging) {
+                    mView.invalidate();
                     updateBounds();
                     downDX = originalX - downRawX;
                     downDY = originalY - downRawY;
