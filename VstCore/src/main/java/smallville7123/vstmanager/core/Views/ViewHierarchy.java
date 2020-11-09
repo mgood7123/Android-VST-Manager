@@ -3,6 +3,7 @@ package smallville7123.vstmanager.core.Views;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewParent;
 
 import androidx.annotation.NonNull;
 
@@ -18,6 +19,7 @@ import static smallville7123.taggable.Taggable.getLastClassName;
 public class ViewHierarchy implements Iterable<ViewHierarchy> {
     private static final String TAG = "ViewHierarchy";
     View view;
+    View parent;
     int depth;
     int invertedDepth;
     int maxDepth;
@@ -161,6 +163,8 @@ public class ViewHierarchy implements Iterable<ViewHierarchy> {
 
     int set(View root, int depth) {
         view = root;
+        ViewParent p = view.getParent();
+        if (p instanceof View) parent = (View) p;
         this.depth = depth;
         if (depth > maxDepth) maxDepth = depth;
         return maxDepth;
