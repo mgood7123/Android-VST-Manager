@@ -20,6 +20,8 @@ public class ViewHierarchy implements Iterable<ViewHierarchy> {
     private static final String TAG = "ViewHierarchy";
     View view;
     View parent;
+    float x;
+    float y;
     int depth;
     int invertedDepth;
     int maxDepth;
@@ -158,7 +160,20 @@ public class ViewHierarchy implements Iterable<ViewHierarchy> {
     // internal
 
     void analyzeInternal(View root, int depth) {
-        int maxDepth = analyze(root, depth);
+        analyze(root, depth);
+        computeOffsets(null);
+    }
+
+    private void computeOffsets(ViewHierarchy parent) {
+        x = view.getX();
+        y = view.getY();
+        if (parent != null) {
+            x += parent.x;
+            y += parent.y;
+        }
+        for (ViewHierarchy hierarchy : this) {
+            hierarchy.computeOffsets(this);
+        }
     }
 
     int set(View root, int depth) {
@@ -175,12 +190,14 @@ public class ViewHierarchy implements Iterable<ViewHierarchy> {
             ViewGroup viewGroup = (ViewGroup) root;
             int r = set(viewGroup, depth);
             int childCount = viewGroup.getChildCount();
-            if (childCount != 0) children = new ArrayList<>();
-            for (int i = 0; i < childCount; i++) {
-                ViewHierarchy viewHierarchy = new ViewHierarchy();
-                int r2 = viewHierarchy.analyze(viewGroup.getChildAt(i), depth + 1);
-                if (r2 > r) r = r2;
-                children.add(viewHierarchy);
+            if (childCount != 0) {
+                children = new ArrayList<>();
+                for (int i = 0; i < childCount; i++) {
+                    ViewHierarchy viewHierarchy = new ViewHierarchy();
+                    int r2 = viewHierarchy.analyze(viewGroup.getChildAt(i), depth + 1);
+                    if (r2 > r) r = r2;
+                    children.add(viewHierarchy);
+                }
             }
             return r;
         } else return set(root, depth);

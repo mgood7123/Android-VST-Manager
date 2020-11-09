@@ -39,19 +39,33 @@ public class ViewCompositor {
                 ViewHierarchy viewHierarchy = new ViewHierarchy();
                 viewHierarchy.analyze(child);
                 ArrayList<ViewHierarchy> sorted = viewHierarchy.sortByDepth();
-                for (ViewHierarchy hierarchy : sorted) compositeInternalView(hierarchy.view, canvas);
+                for (ViewHierarchy hierarchy : sorted) compositeInternalView(hierarchy, canvas);
             } else compositeInternalView(child, canvas);
         }
     }
 
+    private static void compositeInternalView(ViewHierarchy viewHierarchy, Canvas canvas) {
+        float x = viewHierarchy.x;
+        float y = viewHierarchy.y;
+        int w = viewHierarchy.view.getWidth();
+        int h = viewHierarchy.view.getHeight();
+        compositeInternalView(viewHierarchy.view, x, y, w, h, canvas);
+    }
+
     private static void compositeInternalView(View view, Canvas canvas) {
+        float x = view.getX();
+        float y = view.getY();
+        int w = view.getWidth();
+        int h = view.getHeight();
+        compositeInternalView(view, x, y, w, h, canvas);
+    }
+
+    private static void compositeInternalView(View view, float x, float y, int w, int h, Canvas canvas) {
         if (view != null) {
-            int w = view.getWidth();
-            int h = view.getHeight();
             if (w <= 0 || h <= 0) return;
             if (view instanceof TextureView) {
                 Bitmap bitmap = ((TextureView) view).getBitmap();
-                canvas.drawBitmap(bitmap, view.getX(), view.getY(), null);
+                canvas.drawBitmap(bitmap, x, y, null);
                 bitmap.recycle();
             } else {
                 Bitmap bitmap = Bitmap.createBitmap(
@@ -60,15 +74,14 @@ public class ViewCompositor {
                         Bitmap.Config.ARGB_8888
                 );
                 if (view instanceof SurfaceView) {
-                    SurfaceView sv = (SurfaceView) view;
                     AtomicBoolean completed = new AtomicBoolean(false);
                     HandlerThread handle = new HandlerThread("Handler");
                     Handler handler = handle.getThreadHandler();
                     while(true) {
-                        PixelCopy.request(sv.getHolder().getSurface(), null, bitmap, copyResult -> {
+                        PixelCopy.request(((SurfaceView) view).getHolder().getSurface(), null, bitmap, copyResult -> {
                             if (completed.get()) return;
                             if (copyResult == PixelCopy.SUCCESS) {
-                                canvas.drawBitmap(bitmap, sv.getX(), sv.getY(), null);
+                                canvas.drawBitmap(bitmap, x, y, null);
                                 bitmap.recycle();
                                 completed.set(true);
                             } else {
@@ -81,7 +94,7 @@ public class ViewCompositor {
                 } else {
                     Canvas childCanvas = new Canvas(bitmap);
                     view.draw(childCanvas);
-                    canvas.drawBitmap(bitmap, view.getX(), view.getY(), null);
+                    canvas.drawBitmap(bitmap, x, y, null);
                     bitmap.recycle();
                 }
             }
