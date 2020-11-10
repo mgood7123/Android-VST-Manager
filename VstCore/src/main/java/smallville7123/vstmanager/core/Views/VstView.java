@@ -69,8 +69,8 @@ public class VstView extends RelativeLayout {
 
         overview = new OverviewGrid(mContext);
         overview.setTag(Internal);
-        overview.setRows(2);
-        overview.setColumns(2);
+        overview.setRows(3);
+        overview.setColumns(3);
         overview.setPlaceholder(new OverviewGrid.PlaceholderGenerator() {
             @Override
             public View generate() {
