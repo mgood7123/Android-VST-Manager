@@ -3,15 +3,18 @@ package smallville7123.vstmanager.core.Views;
 import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
-import android.graphics.Canvas;
+import android.graphics.Color;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
+import android.widget.TextView;
 
 public class VstView extends RelativeLayout {
     private static final String TAG = "VstView";
@@ -43,22 +46,63 @@ public class VstView extends RelativeLayout {
     Bitmap bm = null;
     ImageView background = null;
 
+    // see https://stackoverflow.com/questions/40587168/simple-android-grid-example-using-recyclerview-with-gridlayoutmanager-like-the
+
+    OverviewGrid overview = null;
+    boolean overviewShown = false;
+
+    void addItem(LinearLayout row) {
+        TextView item = new TextView(mContext);
+        item.setTextSize(30.0f);
+        item.setText("Hello!");
+        row.addView(item);
+    }
+
     void init(Context context, AttributeSet attrs) {
         mContext = context;
         defaultWindowWidth = toDP(getResources(), getDefaultWindowWidthDP);
         defaultWindowHeight = toDP(getResources(), getDefaultWindowHeightDP);
-//        setOnLongClickListener(v -> {
-//            Log.d(TAG, "onLongClick() called with: v = [" + v + "]");
-//
-//            if (bm != null) bm.recycle();
-//            if (background != null) {
-//                View child = ((ViewGroup) getParent()).getChildAt(0);
-//                if (child instanceof ImageView) background = (ImageView) child;
-//            }
-//            bm = ViewCompositor.composite(this, background);
-//
-//            return false;
-//        });
+        setOnClickListener(v -> {
+            Log.d(TAG, "VSTVIEW onClick() called with: v = [" + v + "]");
+            showOverview();
+        });
+
+        overview = new OverviewGrid(mContext);
+        overview.setTag(Internal);
+        overview.setRows(2);
+        overview.setColumns(2);
+        overview.setPlaceholder(new OverviewGrid.PlaceholderGenerator() {
+            @Override
+            public View generate() {
+                Button b = new Button(mContext);
+                b.setText("Button");
+                return b;
+            }
+        });
+        overview.setBackgroundColor(Color.rgb(128,128,128));
+
+        overview.setOnClickListener(v -> {
+            Log.d(TAG, "OVERVIEW onClick() called with: v = [" + v + "]");
+            hideOverview();
+        });
+
+        hideOverview();
+        addView(overview, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+    }
+
+    void showOverview() {
+        if (overview != null) {
+            overview.bringToFront();
+            overview.setVisibility(VISIBLE);
+            overviewShown = true;
+        }
+    }
+
+    void hideOverview() {
+        if (overview != null) {
+            overview.setVisibility(GONE);
+            overviewShown = false;
+        }
     }
 
     boolean childHasBeenBroughtToFront = false;
@@ -66,9 +110,8 @@ public class VstView extends RelativeLayout {
 
     @Override
     public boolean onInterceptTouchEvent(MotionEvent ev) {
+        if (overviewShown) return false;
         // scan children and make each clickable
-        // do fifo pattern
-        // first child to be brought to front should make other children not respond
         if (ev.getAction() == MotionEvent.ACTION_DOWN) {
             childHasBeenBroughtToFront = false;
             int childCount = getChildCount();
@@ -82,8 +125,6 @@ public class VstView extends RelativeLayout {
             }
         }
 
-        drawBitmap();
-
         // process input
         return false;
     }
@@ -95,23 +136,6 @@ public class VstView extends RelativeLayout {
         }
         if (bm != null) bm.recycle();
         bm = ViewCompositor.composite(this, background);
-    }
-
-    private Bitmap getBitmap(View child) {
-        Bitmap childBitmap = Bitmap.createBitmap(
-                child.getWidth(),
-                child.getHeight(),
-                Bitmap.Config.ARGB_8888
-        );
-        Canvas childCanvas = new Canvas(childBitmap);
-        child.draw(childCanvas);
-        return childBitmap;
-    }
-
-    @Override
-    protected void onDraw(Canvas canvas) {
-        super.onDraw(canvas);
-        drawBitmap();
     }
 
     static class Internal {};

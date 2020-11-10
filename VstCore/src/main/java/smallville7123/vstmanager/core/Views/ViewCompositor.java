@@ -94,6 +94,7 @@ public class ViewCompositor {
                 } else {
                     Canvas childCanvas = new Canvas(bitmap);
                     view.draw(childCanvas);
+                    view.onDrawForeground(childCanvas);
                     canvas.drawBitmap(bitmap, x, y, null);
                     bitmap.recycle();
                 }
