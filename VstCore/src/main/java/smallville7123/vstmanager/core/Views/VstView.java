@@ -20,7 +20,7 @@ public class VstView extends RelativeLayout {
     int defaultWindowHeight;
     int getDefaultWindowWidthDP = 200;
     int getDefaultWindowHeightDP = 200;
-    OverviewGrid overview = null;
+    Overview overview = null;
     boolean overviewShown = false;
 
     public VstView(Context context) {
@@ -52,7 +52,7 @@ public class VstView extends RelativeLayout {
             showOverview();
         });
 
-        overview = new OverviewGrid(mContext);
+        overview = new Overview(mContext);
         overview.setTag(Internal);
         overview.setRows(2);
         overview.setColumns(2);
@@ -121,12 +121,6 @@ public class VstView extends RelativeLayout {
 
     static class Internal {}
     static Internal Internal = new Internal();
-
-    @Override
-    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
-        Log.d(TAG, "onSizeChanged() called with: w = [" + w + "], h = [" + h + "], oldw = [" + oldw + "], oldh = [" + oldh + "]");
-        super.onSizeChanged(w, h, oldw, oldh);
-    }
 
     Random xGen = new Random();
     Random yGen = new Random();
