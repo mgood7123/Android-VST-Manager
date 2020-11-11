@@ -11,10 +11,13 @@
         <option name="modules">
           <set>
             <option value="$PROJECT_DIR$" />
+            <option value="$PROJECT_DIR$/BitmapView" />
             <option value="$PROJECT_DIR$/Clickable" />
             <option value="$PROJECT_DIR$/Draggable" />
             <option value="$PROJECT_DIR$/ExampleVstApplication" />
+            <option value="$PROJECT_DIR$/LibParcelableBundle" />
             <option value="$PROJECT_DIR$/ReflectionUtils" />
+            <option value="$PROJECT_DIR$/TODO" />
             <option value="$PROJECT_DIR$/Taggable" />
             <option value="$PROJECT_DIR$/VstCore" />
             <option value="$PROJECT_DIR$/VstManager" />

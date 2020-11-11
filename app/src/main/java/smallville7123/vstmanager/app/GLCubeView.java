@@ -16,12 +16,14 @@ import java.nio.ShortBuffer;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
+import smallville7123.vstmanager.core.Views.GLTextureView;
+
 //animated GLCube
 //mostly adapted from samples online
 //http://code.google.com/p/opengles-book-samples/source/browse/trunk/Android/Ch9_Simple_TextureCubemap/src/com/openglesbook/simpletexturecubemap/SimpleTextureCubemapRenderer.java?r=36
 //http://www.learnopengles.com/rotating-an-object-with-touch-events/
 
-public class GLCubeView extends GLSurfaceView {
+public class GLCubeView extends GLTextureView {
 
     CubeRenderer mRenderer;
     private float mPreviousX;
@@ -94,13 +96,6 @@ public class GLCubeView extends GLSurfaceView {
             requestRender();
         }
         return true;
-    }
-
-    public void spinCube(float dx, float dy, float dz){
-        mRenderer.mDeltaX += dx;
-        mRenderer.mDeltaY += dy;
-        mRenderer.mDeltaZ += dz;
-        requestRender();
     }
 
     private class CubeRenderer implements Renderer {

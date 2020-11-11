@@ -9,7 +9,6 @@ import android.view.SurfaceView;
 import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
 
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -122,16 +121,14 @@ public class ViewCompositor {
     }
 
 
-    public static Bitmap composite(View view, ImageView background) {
-        Log.d(TAG, "composite() called with: view = [" + view + "], background = [" + background + "]");
-        if (view == null || background == null) return null;
+    public static Bitmap composite(View view) {
+        if (view == null) return null;
         int w = view.getWidth();
         int h = view.getHeight();
         Bitmap bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
         Canvas canvas = new Canvas(bitmap);
         if (view instanceof ViewGroup) compositeInternalViewGroup((ViewGroup) view, canvas);
         else compositeInternalView(view, canvas);
-        background.setImageBitmap(bitmap);
         return bitmap;
     }
 }

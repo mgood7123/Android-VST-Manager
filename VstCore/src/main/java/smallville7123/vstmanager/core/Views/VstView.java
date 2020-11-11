@@ -2,7 +2,6 @@ package smallville7123.vstmanager.core.Views;
 
 import android.content.Context;
 import android.content.res.Resources;
-import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -10,11 +9,9 @@ import android.util.TypedValue;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
-import android.widget.TextView;
+
+import java.util.Random;
 
 public class VstView extends RelativeLayout {
     private static final String TAG = "VstView";
@@ -23,6 +20,9 @@ public class VstView extends RelativeLayout {
     int defaultWindowHeight;
     int getDefaultWindowWidthDP = 200;
     int getDefaultWindowHeightDP = 200;
+    OverviewGrid overview = null;
+    boolean overviewShown = false;
+
     public VstView(Context context) {
         super(context);
         init(context, null);
@@ -43,21 +43,6 @@ public class VstView extends RelativeLayout {
         init(context, attrs);
     }
 
-    Bitmap bm = null;
-    ImageView background = null;
-
-    // see https://stackoverflow.com/questions/40587168/simple-android-grid-example-using-recyclerview-with-gridlayoutmanager-like-the
-
-    OverviewGrid overview = null;
-    boolean overviewShown = false;
-
-    void addItem(LinearLayout row) {
-        TextView item = new TextView(mContext);
-        item.setTextSize(30.0f);
-        item.setText("Hello!");
-        row.addView(item);
-    }
-
     void init(Context context, AttributeSet attrs) {
         mContext = context;
         defaultWindowWidth = toDP(getResources(), getDefaultWindowWidthDP);
@@ -69,18 +54,9 @@ public class VstView extends RelativeLayout {
 
         overview = new OverviewGrid(mContext);
         overview.setTag(Internal);
-        overview.setRows(3);
-        overview.setColumns(3);
-        overview.setPlaceholder(new OverviewGrid.PlaceholderGenerator() {
-            @Override
-            public View generate() {
-                Button b = new Button(mContext);
-                b.setText("Button");
-                return b;
-            }
-        });
-        overview.setBackgroundColor(Color.rgb(128,128,128));
-
+        overview.setRows(2);
+        overview.setColumns(2);
+        overview.setBackgroundColor(Color.argb(168, 128,128,128));
         overview.setOnClickListener(v -> {
             Log.d(TAG, "OVERVIEW onClick() called with: v = [" + v + "]");
             hideOverview();
@@ -92,6 +68,19 @@ public class VstView extends RelativeLayout {
 
     void showOverview() {
         if (overview != null) {
+            int childCount = getChildCount();
+            if (childCount != 0) {
+                for (int count = childCount; count > -1; count--) {
+                    View child = getChildAt(count);
+                    if (child instanceof WindowView) {
+                        overview.addItem(
+                                ViewCompositor.composite(
+                                        ((WindowView) child).window_content
+                                )
+                        );
+                    }
+                }
+            }
             overview.bringToFront();
             overview.setVisibility(VISIBLE);
             overviewShown = true;
@@ -100,6 +89,7 @@ public class VstView extends RelativeLayout {
 
     void hideOverview() {
         if (overview != null) {
+            overview.clear();
             overview.setVisibility(GONE);
             overviewShown = false;
         }
@@ -129,26 +119,54 @@ public class VstView extends RelativeLayout {
         return false;
     }
 
-    void drawBitmap() {
-        if (background == null) {
-            View child = ((ViewGroup) getParent()).getChildAt(0);
-            if (child instanceof ImageView) background = (ImageView) child;
-        }
-        if (bm != null) bm.recycle();
-        bm = ViewCompositor.composite(this, background);
+    static class Internal {}
+    static Internal Internal = new Internal();
+
+    @Override
+    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+        Log.d(TAG, "onSizeChanged() called with: w = [" + w + "], h = [" + h + "], oldw = [" + oldw + "], oldh = [" + oldh + "]");
+        super.onSizeChanged(w, h, oldw, oldh);
     }
 
-    static class Internal {};
-    static Internal Internal = new Internal();
+    Random xGen = new Random();
+    Random yGen = new Random();
+
+    boolean randomizeChildren = true;
+
+    @Override
+    protected void onLayout(boolean changed, int l, int t, int r, int b) {
+        Log.d(TAG, "onLayout() called with: changed = [" + changed + "], l = [" + l + "], t = [" + t + "], r = [" + r + "], b = [" + b + "]");
+        super.onLayout(changed, l, t, r, b);
+        if (randomizeChildren) {
+            int childCount = getChildCount();
+            if (childCount != 0) {
+                for (int i = 0; i < childCount; i++) {
+                    View child = getChildAt(i);
+                    if (child instanceof WindowView) {
+                        WindowView window = ((WindowView) child);
+                        if (!window.randomized) {
+                            int maxX = (int) ((r+window.offsetRight) - (window.getWidth()-window.offsetRight));
+                            int maxY = (int) ((b+window.offsetBottom) - (window.getHeight()-window.offsetBottom));
+                            int x = xGen.nextInt(maxX);
+                            int y = yGen.nextInt(maxY);
+                            window.setX(x-window.offsetLeft);
+                            window.setY(y-window.offsetTop);
+                            window.randomized = true;
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     @Override
     public void addView(View child, int index, ViewGroup.LayoutParams params) {
         if (child.getTag() == Internal) super.addView(child, index, params);
         else if (child instanceof WindowView) {
             Log.d(TAG, "addView() called with WINDOW: child = [" + child + "], index = [" + index + "], params = [" + params + "]");
-            WindowView x = (WindowView) child;
-            x.setDrag(this);
-            super.addView(x, index, params);
+            WindowView window = (WindowView) child;
+            window.setDrag(this);
+            super.addView(window, index, params);
         } else {
             Log.d(TAG, "addView() called with NON WINDOW: child = [" + child + "], index = [" + index + "], params = [" + params + "]");
             // wrap view in WindowView

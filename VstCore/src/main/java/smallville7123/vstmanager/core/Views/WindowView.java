@@ -5,7 +5,9 @@ import android.content.res.Resources;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.opengl.GLSurfaceView;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -22,6 +24,7 @@ import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
 
 public class WindowView extends FrameLayout {
 
+    public boolean randomized = false;
     private OnDragTouchListener draggable;
     private TextView title;
 
@@ -96,8 +99,6 @@ public class WindowView extends FrameLayout {
 //            attributes.recycle();
         }
     }
-
-    FrameLayout content = null;
 
     LayoutParams windowContentLayout;
 
@@ -317,6 +318,12 @@ public class WindowView extends FrameLayout {
                     || !vstView.childHasBeenBroughtToFront
             ) {
                 bringToFront();
+                View child = window_content.getChildAt(0);
+                Log.d(TAG, "child = [" + child + "]");
+                if (child instanceof GLSurfaceView) {
+                    Log.d(TAG, "onInterceptTouchEvent: bringing child to front");
+                    child.bringToFront();
+                }
                 broughtToFront = true;
                 vstView.childHasBeenBroughtToFront = true;
                 vstView.currentTop = this;

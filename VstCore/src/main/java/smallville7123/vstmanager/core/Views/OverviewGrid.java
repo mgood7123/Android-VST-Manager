@@ -1,18 +1,38 @@
 package smallville7123.vstmanager.core.Views;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.util.AttributeSet;
-import android.view.View;
+import android.util.Log;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
-import android.widget.LinearLayout;
+import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.util.Random;
+
+import smallville7123.bitmapview.BitmapVector;
+
+import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
+
 public class OverviewGrid extends RecyclerView {
+    private static final String TAG = "OverviewGrid";
+    public boolean rainbow = false;
+    private Context mContext;
+    OverviewAdapter adapter;
+    GridLayoutManager manager;
+    OnClickListener onClickListener;
+    int rowCount = 2;
+    int columnCount = 2;
+    BitmapVector Items = new BitmapVector();
+    int global_padding = 75;
+
+
     public OverviewGrid(@NonNull Context context) {
         super(context);
         init(context);
@@ -28,17 +48,13 @@ public class OverviewGrid extends RecyclerView {
         init(context);
     }
 
-    private Context mContext;
-    OverviewAdapter adapter;
-
     private void init(Context context) {
         mContext = context;
         adapter = new OverviewAdapter();
         setAdapter(adapter);
-        setLayoutManager(new LinearLayoutManager(mContext));
+        manager = new GridLayoutManager(mContext, 1);
+        setLayoutManager(manager);
     }
-
-    OnClickListener onClickListener;
 
     @Override
     public void setOnClickListener(@Nullable OnClickListener l) {
@@ -46,71 +62,103 @@ public class OverviewGrid extends RecyclerView {
         super.setOnClickListener(l);
     }
 
-    int rowCount = 0;
-    int columnCount = 0;
-
     public void setRows(int count) {
         rowCount = count;
     }
 
     public void setColumns(int count) {
         columnCount = count;
+        manager.setSpanCount(count);
     }
 
-    PlaceholderGenerator generator;
-
-    public void setPlaceholder(PlaceholderGenerator placeholderGenerator) {
-        generator = placeholderGenerator;
+    public void addItem(Bitmap item) {
+        Log.d(TAG, "addItem() called with: item = [" + item + "]");
+        Items.add(item);
+        if (adapter != null) adapter.notifyDataSetChanged();
     }
 
-    public static abstract class PlaceholderGenerator {
-        public abstract View generate();
+    public void clear() {
+        // remove all items from this RecycleView so they can be garbage collected if needed
+        Items.recycleAndRemoveAllElements();
+        if (adapter != null) adapter.notifyDataSetChanged();
     }
-
-    int global_padding = 25;
 
     class OverviewAdapter extends RecyclerView.Adapter<OverviewAdapter.ViewHolder> {
+        Random random = new Random();
 
         public class ViewHolder extends RecyclerView.ViewHolder {
 
-            public ViewHolder(FrameLayout itemView, View contents) {
+            FrameLayout frameLayout;
+            FrameLayout contentFrame;
+            ImageView content;
+
+            public ViewHolder(FrameLayout itemView) {
                 super(itemView);
-                itemView.addView(contents, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+                frameLayout = itemView;
+                contentFrame = new FrameLayout(mContext);
+                content = new ImageView(mContext);
+
+                content.setBackgroundColor(Color.BLACK);
+                frameLayout.addView(contentFrame, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
+                contentFrame.addView(content, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
+            }
+
+            void setRainbow() {
+                int r = random.nextInt(255);
+                int g = random.nextInt(255);
+                int b = random.nextInt(255);
+                frameLayout.setBackgroundColor(Color.rgb(r, g, b));
+            }
+
+            public void adjustHeightByRowCount() {
+                float containerHeight = getHeight();
+                ViewGroup.LayoutParams p = new ViewGroup.LayoutParams(MATCH_PARENT, MATCH_PARENT);
+                p.height = Math.round(containerHeight/rowCount);
+                frameLayout.setLayoutParams(p);
+            }
+
+            public void adjustForPadding() {
+                contentFrame.setPadding(global_padding, global_padding, global_padding, global_padding);
+            }
+
+            public void setItem(int position) {
+                // add item if we can
+                if (position < Items.size()) {
+                    Log.d(TAG, "setItem() called with: position = [" + position + "]");
+                    content.setImageBitmap(Items.get(position));
+                }
+            }
+
+            public void setOnClickListener() {
+                if (onClickListener != null) {
+                    frameLayout.setOnClickListener(onClickListener);
+                } else {
+                    frameLayout.setOnClickListener(null);
+                    frameLayout.setClickable(false);
+                }
             }
         }
 
         @Override
         public OverviewAdapter.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-            LinearLayout layout = new LinearLayout(mContext);
-            for (int i = 0; i < columnCount; i++) {
-                FrameLayout frame = new FrameLayout(mContext);
-                frame.setPadding(global_padding, global_padding, global_padding, global_padding);
-                frame.addView(generator.generate(), new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-                layout.addView(
-                        frame,
-                        new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT, 1f)
-                );
-            }
-            return new ViewHolder(new FrameLayout(mContext), layout);
+            return new ViewHolder(new FrameLayout(mContext));
         }
 
         // Involves populating data into the item through holder
         @Override
-        public void onBindViewHolder(OverviewAdapter.ViewHolder holder, int position) {
-            float containerHeight = getHeight();
-
-            ViewGroup.LayoutParams p = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
-            p.height = Math.round(containerHeight/rowCount);
-            holder.itemView.setLayoutParams(p);
-
-            if (onClickListener != null) {
-                holder.itemView.setOnClickListener(onClickListener);
-            }
+        public void onBindViewHolder(ViewHolder holder, int position) {
+            if (rainbow) holder.setRainbow();
+            holder.adjustHeightByRowCount();
+            holder.adjustForPadding();
+            holder.setItem(position);
+            holder.setOnClickListener();
         }
 
         @Override
         public int getItemCount() {
-            return rowCount*2;
+            // ensure there is at least rowCount items
+            int itemSize = Items.size();
+            return itemSize + (itemSize % columnCount);
         }
     }
 }

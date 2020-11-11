@@ -1,3 +1,6 @@
+include ':TODO'
+include ':LibParcelableBundle'
+include ':BitmapView'
 include ':Draggable'
 include ':Clickable'
 include ':examplenonvstapplication'
