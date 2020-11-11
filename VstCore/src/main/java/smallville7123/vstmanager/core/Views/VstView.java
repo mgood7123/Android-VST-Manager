@@ -13,6 +13,8 @@ import android.widget.RelativeLayout;
 
 import java.util.Random;
 
+import smallville7123.liboverview.Overview;
+
 public class VstView extends RelativeLayout {
     private static final String TAG = "VstView";
     Context mContext;

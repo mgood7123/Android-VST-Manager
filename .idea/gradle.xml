@@ -23,6 +23,7 @@
             <option value="$PROJECT_DIR$/VstManager" />
             <option value="$PROJECT_DIR$/app" />
             <option value="$PROJECT_DIR$/examplenonvstapplication" />
+            <option value="$PROJECT_DIR$/libOverview" />
           </set>
         </option>
         <option name="resolveModulePerSourceSet" value="false" />
