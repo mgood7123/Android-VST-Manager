@@ -153,11 +153,15 @@ public class VstView extends RelativeLayout {
                         WindowView window = ((WindowView) child);
                         if (!window.randomized) {
                             int maxX = (int) ((r+window.offsetRight) - (window.getWidth()-window.offsetRight));
+                            if (maxX > 0) {
+                                int x = xGen.nextInt(maxX);
+                                window.setX(x - window.offsetLeft);
+                            }
                             int maxY = (int) ((b+window.offsetBottom) - (window.getHeight()-window.offsetBottom));
-                            int x = xGen.nextInt(maxX);
-                            int y = yGen.nextInt(maxY);
-                            window.setX(x-window.offsetLeft);
-                            window.setY(y-window.offsetTop);
+                            if (maxY > 0) {
+                                int y = yGen.nextInt(maxY);
+                                window.setY(y - window.offsetTop);
+                            }
                             window.randomized = true;
                         }
                     }

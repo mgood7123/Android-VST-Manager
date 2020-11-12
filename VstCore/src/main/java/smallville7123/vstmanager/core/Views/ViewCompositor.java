@@ -34,12 +34,10 @@ public class ViewCompositor {
         int childCount = view.getChildCount();
         for (int i = 0; i < childCount; i++) {
             View child = view.getChildAt(i);
-            if (child instanceof WindowView) {
-                ViewHierarchy viewHierarchy = new ViewHierarchy();
-                viewHierarchy.analyze(child);
-                ArrayList<ViewHierarchy> sorted = viewHierarchy.sortByDepth();
-                for (ViewHierarchy hierarchy : sorted) compositeInternalView(hierarchy, canvas);
-            } else compositeInternalView(child, canvas);
+            ViewHierarchy viewHierarchy = new ViewHierarchy();
+            viewHierarchy.analyze(child);
+            ArrayList<ViewHierarchy> sorted = viewHierarchy.sortByDepth();
+            for (ViewHierarchy hierarchy : sorted) compositeInternalView(hierarchy, canvas);
         }
     }
 
