@@ -183,6 +183,8 @@ public class WindowView extends FrameLayout {
     int savedWidth;
     int savedHeight;
 
+    boolean minimized = false;
+
     private void init(Context context, AttributeSet attrs) {
         getRootLayout(context);
         rootLayoutParams = new LayoutParams(MATCH_PARENT, MATCH_PARENT);
@@ -192,6 +194,10 @@ public class WindowView extends FrameLayout {
         View titleBar = inflate(context, R.layout.titlebar, null);
         View restore = titleBar.findViewById(R.id.restore);
         View maximize = titleBar.findViewById(R.id.maximize);
+        titleBar.findViewById(R.id.minimize).setOnClickListener(v -> {
+            setVisibility(GONE);
+            minimized = true;
+        });
         restore.setVisibility(GONE);
         maximize.setOnClickListener(v -> {
             ViewGroup.LayoutParams layoutParams = getLayoutParams();
@@ -325,12 +331,17 @@ public class WindowView extends FrameLayout {
         if (
                 vstView.currentTop == this
                         || vstView.currentTop == null
-                        || !vstView.childHasBeenBroughtToFront
+                        || minimized || !vstView.childHasBeenBroughtToFront
         ) {
+            if (minimized) {
+                vstView.currentTop.broughtToFront = false;
+                setVisibility(VISIBLE);
+            }
             bringToFront();
             broughtToFront = true;
             vstView.childHasBeenBroughtToFront = true;
             vstView.currentTop = this;
+            minimized = false;
             // process input
             return false;
         } else {
