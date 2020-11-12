@@ -2,6 +2,7 @@ package smallville7123.vstmanager.core.Views;
 
 import android.content.Context;
 import android.content.res.Resources;
+import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -75,11 +76,9 @@ public class VstView extends RelativeLayout {
                 for (int count = childCount; count > -1; count--) {
                     View child = getChildAt(count);
                     if (child instanceof WindowView) {
-                        overview.addItem(
-                                ViewCompositor.composite(
-                                        ((WindowView) child).window_content
-                                )
-                        );
+                        WindowView window = ((WindowView) child);
+                        Bitmap window_image = ViewCompositor.composite(window.window_content);
+                        overview.addItem(window_image);
                     }
                 }
             }
