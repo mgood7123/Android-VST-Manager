@@ -138,12 +138,16 @@ public class ReflectionActivity extends ContextThemeWrapper {
     Pair<Object, Context> hostLink;
     ArrayList<Pair<Object, Context>> clients = new ArrayList<>();
     static String listName = "Clients";
+    Object currentClient;
 
-    public ReflectionActivity(Context context, String packageName, VST vst, Class callback, ViewGroup contentRoot) {
-        Object client = linkClientWithHost(callback, context, vst.applicationContext);
-        Log.d(TAG, "client = [" + client + "]");
-        ReflectionHelpers.setField(client, "mContentRoot", contentRoot);
-        ReflectionHelpers.callInstanceMethod(client, "onCreate", from(Bundle.class, null));
+    public ReflectionActivity(Context context, String packageName, Context applicationContext, Class callback, ViewGroup contentRoot) {
+        currentClient = linkClientWithHost(callback, context, applicationContext);
+        Log.d(TAG, "client = [" + currentClient + "]");
+        ReflectionHelpers.setField(currentClient, "mContentRoot", contentRoot);
+    }
+
+    void callOnCreate(Bundle savedState) {
+        ReflectionHelpers.callInstanceMethod(currentClient, "onCreate", from(Bundle.class, savedState));
     }
 
     private Object linkClientWithHost(Class clientClass, Context hostContext, Context clientContext) {
@@ -156,6 +160,7 @@ public class ReflectionActivity extends ContextThemeWrapper {
         return client.first;
     }
 
+    @SuppressWarnings("unused")
     public void linkClient(Pair<Object, Context> client) {
         clients.add(client);
         Log.d(TAG, "linkClient() called with: client = [" + client + "]");
@@ -163,6 +168,7 @@ public class ReflectionActivity extends ContextThemeWrapper {
         Log.d(TAG, "linkClient: host/client link has successfully been established");
     }
 
+    @SuppressWarnings("unused")
     public void linkHost(Pair<Object, Context> host, Pair<Object, Context> client) {
         Log.d(TAG, "linkHost() called with: host = [" + host + "], client = [" + client + "]");
         hostLink = host;

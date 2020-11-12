@@ -78,7 +78,7 @@ public class VstView extends RelativeLayout {
                     if (child instanceof WindowView) {
                         WindowView window = ((WindowView) child);
                         Bitmap window_image = ViewCompositor.composite(window.window_content);
-                        overview.addItem(window_image);
+                        overview.addItem(window.icon, window.title, window_image);
                     }
                 }
             }
@@ -160,16 +160,23 @@ public class VstView extends RelativeLayout {
         else if (child instanceof WindowView) {
             Log.d(TAG, "addView() called with WINDOW: child = [" + child + "], index = [" + index + "], params = [" + params + "]");
             WindowView window = (WindowView) child;
+            window.setTitle(mContext.getPackageName());
             window.setDrag(this);
             super.addView(window, index, params);
         } else {
             Log.d(TAG, "addView() called with NON WINDOW: child = [" + child + "], index = [" + index + "], params = [" + params + "]");
             // wrap view in WindowView
-            WindowView window = new WindowView(mContext);
-            window.setDrag(this);
+            WindowView window = requestNewWindow();
+            window.setTitle(mContext.getPackageName());
             window.addView(child, params);
-            super.addView(window, -1, new LayoutParams(defaultWindowWidth, defaultWindowHeight));
         }
+    }
+
+    public WindowView requestNewWindow() {
+        WindowView window = new WindowView(mContext);
+        window.setDrag(this);
+        super.addView(window, -1, new LayoutParams(defaultWindowWidth, defaultWindowHeight));
+        return window;
     }
 
     public static int toDP(Resources resources, float val) {

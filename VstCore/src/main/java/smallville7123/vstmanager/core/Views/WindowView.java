@@ -5,6 +5,7 @@ import android.content.res.Resources;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.drawable.Drawable;
 import android.opengl.GLSurfaceView;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -13,6 +14,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewParent;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.constraintlayout.widget.ConstraintLayout;
@@ -26,7 +28,6 @@ public class WindowView extends FrameLayout {
 
     public boolean randomized = false;
     private OnDragTouchListener draggable;
-    private TextView title;
 
     public WindowView(Context context) {
         super(context);
@@ -70,6 +71,21 @@ public class WindowView extends FrameLayout {
         draggable.offsetLeft = offsetLeft;
         draggable.offsetRight = offsetRight;
         draggable.onlyDragWithinWidthAndHeightRegions = true;
+    }
+
+    Drawable icon;
+    CharSequence title;
+
+    public void setIcon(Drawable icon) {
+        this.icon = icon;
+        if (titleBarContent != null)
+            ((ImageView) titleBarContent.findViewById(R.id.icon)).setImageDrawable(icon);
+    }
+
+    public void setTitle(CharSequence title) {
+        this.title = title;
+        if (titleBarContent != null)
+            ((TextView) titleBarContent.findViewById(R.id.title)).setText(title);
     }
 
     private static class Internal {}
@@ -176,8 +192,10 @@ public class WindowView extends FrameLayout {
 
         titleBarContent = setupTitleBarContent(root);
         View titleBar = inflate(context, R.layout.titlebar, null);
-        View titleBar_maximized = inflate(context, R.layout.titlebar_maximized, null);
-        titleBar.findViewById(R.id.maximize).setOnClickListener(v -> {
+        View restore = titleBar.findViewById(R.id.restore);
+        View maximize = titleBar.findViewById(R.id.maximize);
+        restore.setVisibility(GONE);
+        maximize.setOnClickListener(v -> {
             ViewGroup.LayoutParams layoutParams = getLayoutParams();
             savedX = getX();
             savedY = getY();
@@ -192,11 +210,12 @@ public class WindowView extends FrameLayout {
             layoutParams.width = (int) (width - widthRight - (touchZoneWidthRight - offsetRight));
             layoutParams.height = (int) (height - heightBottom - (touchZoneHeightBottom - offsetBottom));
             setLayoutParams(layoutParams);
+            restore.setVisibility(VISIBLE);
+            maximize.setVisibility(GONE);
 
             maximized = true;
-            setTitleBar(titleBar_maximized);
         });
-        titleBar_maximized.findViewById(R.id.restore).setOnClickListener(v -> {
+        restore.setOnClickListener(v -> {
             ViewGroup.LayoutParams layoutParams = getLayoutParams();
             setX(savedX);
             setY(savedY);
@@ -205,8 +224,9 @@ public class WindowView extends FrameLayout {
             layoutParams.height = savedHeight;
             setLayoutParams(layoutParams);
 
+            restore.setVisibility(GONE);
+            maximize.setVisibility(VISIBLE);
             maximized = false;
-            setTitleBar(titleBar);
         });
         setTitleBar(titleBar);
         setWindowContent(root);

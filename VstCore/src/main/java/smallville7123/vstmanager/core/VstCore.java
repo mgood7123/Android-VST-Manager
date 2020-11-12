@@ -258,7 +258,7 @@ public class VstCore {
                 e.printStackTrace();
             }
         }
-        list.sort((object1, object2) -> object1.compareTo(object2));
+        list.sort(String::compareTo);
         return list;
     }
 
@@ -269,6 +269,14 @@ public class VstCore {
         scanner.runOnUiThread.run(() -> scanner.onClassFullyScannedSetMax.run(size));
         for (int i = 0; i < size; i++) {
             String className = classFiles.get(i);
+            if (className.contentEquals("smallville7123.vstmanager.core.VstActivity")) {
+                if (debug) Log.d(TAG, "VstCore: hasVstCallback: skipping internal callback: [" + callbackClassName + "]");
+                continue;
+            }
+            if (className.contentEquals("smallville7123.vstmanager.core.ReflectionActivity")) {
+                if (debug) Log.d(TAG, "VstCore: hasVstCallback: skipping internal callback: [" + callbackClassName + "]");
+                continue;
+            }
             if (className.contentEquals(callbackClassName)) {
                 if (debug) Log.d(TAG, "VstCore: hasVstCallback: found [" + callbackClassName + "]");
                 return true;
@@ -291,6 +299,14 @@ public class VstCore {
         scanner.runOnUiThread.run(() -> scanner.onClassFullyScannedSetMax.run(size));
         for (int i = 0; i < size; i++) {
             String className = classFiles.get(i);
+            if (className.contentEquals("smallville7123.vstmanager.core.VstActivity")) {
+                if (debug) Log.d(TAG, "VstCore: hasVstCallback: skipping internal callback: [" + callbackClassName + "]");
+                continue;
+            }
+            if (className.contentEquals("smallville7123.vstmanager.core.ReflectionActivity")) {
+                if (debug) Log.d(TAG, "VstCore: hasVstCallback: skipping internal callback: [" + callbackClassName + "]");
+                continue;
+            }
             Class c = null;
             try {
                 if (debug) Log.d(TAG, "VstCore: getCallbacks: loading class: " + className);
