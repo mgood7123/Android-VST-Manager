@@ -78,7 +78,13 @@ public class VstView extends RelativeLayout {
                     if (child instanceof WindowView) {
                         WindowView window = ((WindowView) child);
                         Bitmap window_image = ViewCompositor.composite(window.window_content);
-                        overview.addItem(window.icon, window.title, window_image);
+                        overview.addItem(window.icon, window.title, window_image, window);
+                        overview.setOnItemClick(data -> {
+                            WindowView window_ = ((WindowView) data);
+                            if (window_.broughtToFront) return;
+                            else prepareToBringChildToFront();
+                            window_.bringThisWindowToFront(this);
+                        });
                     }
                 }
             }
@@ -99,21 +105,25 @@ public class VstView extends RelativeLayout {
     boolean childHasBeenBroughtToFront = false;
     WindowView currentTop = null;
 
+    void prepareToBringChildToFront() {
+        childHasBeenBroughtToFront = false;
+        int childCount = getChildCount();
+        if (childCount != 0) {
+            for (int i = 0; i < childCount; i++) {
+                View child = getChildAt(i);
+                if (child instanceof WindowView) {
+                    ((WindowView) child).broughtToFront = false;
+                }
+            }
+        }
+    }
+
     @Override
     public boolean onInterceptTouchEvent(MotionEvent ev) {
         if (overviewShown) return false;
         // scan children and make each clickable
         if (ev.getAction() == MotionEvent.ACTION_DOWN) {
-            childHasBeenBroughtToFront = false;
-            int childCount = getChildCount();
-            if (childCount != 0) {
-                for (int i = 0; i < childCount; i++) {
-                    View child = getChildAt(i);
-                    if (child instanceof WindowView) {
-                        ((WindowView) child).broughtToFront = false;
-                    }
-                }
-            }
+            prepareToBringChildToFront();
         }
 
         // process input

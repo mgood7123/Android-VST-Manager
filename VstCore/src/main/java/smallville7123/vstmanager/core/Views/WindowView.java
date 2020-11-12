@@ -6,9 +6,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.drawable.Drawable;
-import android.opengl.GLSurfaceView;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -323,6 +321,24 @@ public class WindowView extends FrameLayout {
 
     boolean broughtToFront = false;
 
+    public boolean bringThisWindowToFront(VstView vstView) {
+        if (
+                vstView.currentTop == this
+                        || vstView.currentTop == null
+                        || !vstView.childHasBeenBroughtToFront
+        ) {
+            bringToFront();
+            broughtToFront = true;
+            vstView.childHasBeenBroughtToFront = true;
+            vstView.currentTop = this;
+            // process input
+            return false;
+        } else {
+            // do not process input
+            return true;
+        }
+    }
+
     @Override
     public boolean onInterceptTouchEvent(MotionEvent ev) {
         if (broughtToFront) {
@@ -331,28 +347,7 @@ public class WindowView extends FrameLayout {
         }
         ViewParent parent = getParent();
         if (parent instanceof VstView) {
-            VstView vstView = (VstView) parent;
-            if (
-                       vstView.currentTop == this
-                    || vstView.currentTop == null
-                    || !vstView.childHasBeenBroughtToFront
-            ) {
-                bringToFront();
-                View child = window_content.getChildAt(0);
-                Log.d(TAG, "child = [" + child + "]");
-                if (child instanceof GLSurfaceView) {
-                    Log.d(TAG, "onInterceptTouchEvent: bringing child to front");
-                    child.bringToFront();
-                }
-                broughtToFront = true;
-                vstView.childHasBeenBroughtToFront = true;
-                vstView.currentTop = this;
-                // process input
-                return false;
-            } else {
-                // do not process input
-                return true;
-            }
+            return bringThisWindowToFront((VstView) parent);
         } else throw new RuntimeException("invalid parent");
     }
 
