@@ -80,10 +80,12 @@ public class VstView extends RelativeLayout {
                         Bitmap window_image = ViewCompositor.composite(window.window_content);
                         overview.addItem(window.icon, window.title, window_image, window);
                         overview.setOnItemClick(data -> {
-                            WindowView window_ = ((WindowView) data);
-                            if (window_.broughtToFront) return;
-                            else prepareToBringChildToFront();
-                            window_.bringThisWindowToFront(this);
+                            if (data != null) {
+                                WindowView window_ = ((WindowView) data);
+                                if (window_.broughtToFront) return;
+                                else prepareToBringChildToFront();
+                                window_.bringThisWindowToFront(this);
+                            }
                         });
                     }
                 }
