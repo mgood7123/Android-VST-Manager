@@ -710,7 +710,7 @@ public class BaseParcelableBundle {
                 if (!deep) {
                     mMap = new ArrayMap<>(map);
                 } else {
-                    final ArrayMap<String, Object> fromMap = mMap;
+                    final ArrayMap<String, Object> fromMap = map;
                     final int N = fromMap.size();
                     mMap = new ArrayMap<>(N);
                     for (int i = 0; i < N; i++) {

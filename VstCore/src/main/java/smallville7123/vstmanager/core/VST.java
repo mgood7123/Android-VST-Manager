@@ -75,9 +75,10 @@ public class VST {
     public boolean verify(Context context, PackageManager packageManager, ApplicationInfo mApplicationInfo) {
         this.mApplicationInfo = mApplicationInfo;
         mPackageManager = packageManager;
+        packageName = mApplicationInfo.packageName;
+//        FileDatabase packageDatabase = scanner.scannerDatabase.createDataBase(packageName);
         applicationContext = core.createContextForPackage(context, mApplicationInfo);
         if (applicationContext == null) return false;
-        packageName = mApplicationInfo.packageName;
         label = packageManager.getApplicationLabel(mApplicationInfo);
         icon = packageManager.getApplicationIcon(mApplicationInfo);
         logo = packageManager.getApplicationLogo(mApplicationInfo);

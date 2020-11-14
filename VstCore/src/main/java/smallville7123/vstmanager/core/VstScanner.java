@@ -158,13 +158,21 @@ public class VstScanner {
 
     boolean scanComplete = false;
 
+    FileBundle scannerDatabase;
+
     public void scan(Context context, PackageManager packageManager, List<ApplicationInfo> mInstalledApplications) {
-        if (isScanning) {
-//            throw new RuntimeException("cannot scan twice");
-            return;
+        if (scannerDatabase == null) {
+            scannerDatabase = new FileBundle(context, "ScannerDatabase");
+            scannerDatabase.putFileBundle("apple", new FileBundle());
+            if (scannerDatabase.getFileBundle("apple") == null)
+                throw new RuntimeException("before serialization");
+            scannerDatabase.write();
+            scannerDatabase = new FileBundle(context, "ScannerDatabase");
+            scannerDatabase.read();
+            if (scannerDatabase.getFileBundle("apple") == null)
+                throw new RuntimeException("after serialization");
         }
-        if (scanComplete) {
-            onScanComplete.run();
+        if (isScanning) {
             return;
         }
         int size = mInstalledApplications.size();
