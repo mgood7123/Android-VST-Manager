@@ -207,7 +207,6 @@ public class FileBundle implements Serializable {
     private static final int VAL_INTEGER = 1;
     private static final int VAL_MAP = 2;
     private static final int VAL_BUNDLE = 3;
-    private static final int VAL_PARCELABLE = 4;
     private static final int VAL_SHORT = 5;
     private static final int VAL_LONG = 6;
     private static final int VAL_FLOAT = 7;
@@ -302,6 +301,10 @@ public class FileBundle implements Serializable {
 
     void writeFileBundle(ObjectOutputStream aOutputStream, @Nullable FileBundle val) throws IOException {
         writeValue(aOutputStream, val.mMap);
+    }
+
+    FileBundle readFileBundle(ObjectInputStream aInputStream) throws IOException {
+        return (FileBundle) readValue(aInputStream);
     }
 
     /**
@@ -903,6 +906,9 @@ public class FileBundle implements Serializable {
 
             case VAL_BYTE:
                 return aInputStream.readByte();
+
+            case VAL_BUNDLE:
+                return readFileBundle(aInputStream);
 
             case VAL_SERIALIZABLE:
                 return readSerializable(aInputStream);
