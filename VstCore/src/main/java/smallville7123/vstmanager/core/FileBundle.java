@@ -217,7 +217,7 @@ public class FileBundle implements Serializable {
     private static final int VAL_SPARSEARRAY = 12;
     private static final int VAL_BYTEARRAY = 13;
     private static final int VAL_STRINGARRAY = 14;
-    private static final int VAL_IBINDER = 15;
+    private static final int VAL_ARRAY_MAP = 15;
     private static final int VAL_PARCELABLEARRAY = 16;
     private static final int VAL_OBJECTARRAY = 17;
     private static final int VAL_INTARRAY = 18;
@@ -281,6 +281,46 @@ public class FileBundle implements Serializable {
         }
     }
 
+    public ArrayMap readArrayMap(ObjectInputStream aInputStream) throws IOException {
+        int N = aInputStream.readInt();
+        if (N < 0) {
+            return null;
+        }
+        ArrayMap a = new ArrayMap(N);
+        readArrayMapInternal(aInputStream, (ArrayMap<String, Object>) a, N);
+        return a;
+    }
+
+    /* package */ void readArrayMapInternal(ObjectInputStream aInputStream, @NonNull ArrayMap<String, Object> outVal, int N) throws IOException {
+        if (DEBUG_ARRAY_MAP) {
+            RuntimeException here =  new RuntimeException("here");
+            here.fillInStackTrace();
+            Log.d(TAG, "Reading " + N + " ArrayMap entries", here);
+        }
+        while (N > 0) {
+            String key = aInputStream.readUTF();
+            Object value = readValue(aInputStream);
+            outVal.append(key, value);
+            N--;
+        }
+        outVal.validate();
+    }
+
+    /**
+     * Please use {@link #writeBundle} instead.  Flattens a Map into the parcel
+     * at the current dataPosition(),
+     * growing dataCapacity() if needed.  The Map keys must be String objects.
+     * The Map values are written using {@link #writeValue} and must follow
+     * the specification there.
+     *
+     * <p>It is strongly recommended to use {@link #writeBundle} instead of
+     * this method, since the Bundle class provides a type-safe API that
+     * allows you to avoid mysterious type errors at the point of marshalling.
+     */
+    public final void writeArrayMap(ObjectOutputStream aOutputStream, @Nullable ArrayMap val) throws IOException {
+        writeArrayMapInternal(aOutputStream, (ArrayMap<String, Object>) val);
+    }
+
     /**
      * Flatten an ArrayMap into the parcel at the current dataPosition(),
      * growing dataCapacity() if needed.  The Map keys must be String objects.
@@ -294,7 +334,7 @@ public class FileBundle implements Serializable {
         final int N = val.size();
         aOutputStream.writeInt(N);
         for (int i=0; i<N; i++) {
-            writeValue(aOutputStream, val.keyAt(i));
+            aOutputStream.writeUTF(val.keyAt(i));
             writeValue(aOutputStream, val.valueAt(i));
         }
     }
@@ -304,7 +344,9 @@ public class FileBundle implements Serializable {
     }
 
     FileBundle readFileBundle(ObjectInputStream aInputStream) throws IOException {
-        return (FileBundle) readValue(aInputStream);
+        FileBundle bundle = new FileBundle();
+        bundle.mMap = (ArrayMap<String, Object>) readValue(aInputStream);
+        return bundle;
     }
 
     /**
@@ -617,6 +659,9 @@ public class FileBundle implements Serializable {
         } else if (v instanceof Integer) {
             aOutputStream.writeInt(VAL_INTEGER);
             aOutputStream.writeInt((Integer) v);
+        } else if (v instanceof ArrayMap) {
+            aOutputStream.writeInt(VAL_ARRAY_MAP);
+            writeArrayMap(aOutputStream, (ArrayMap) v);
         } else if (v instanceof Map) {
             aOutputStream.writeInt(VAL_MAP);
             writeMap(aOutputStream, (Map) v);
@@ -857,6 +902,9 @@ public class FileBundle implements Serializable {
 
             case VAL_INTEGER:
                 return aInputStream.readInt();
+
+            case VAL_ARRAY_MAP:
+                return readArrayMap(aInputStream);
 
             case VAL_MAP:
                 return readHashMap(aInputStream);
