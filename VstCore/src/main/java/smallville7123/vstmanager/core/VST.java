@@ -75,25 +75,42 @@ public class VST {
     }
 
     public boolean verify(Context context, PackageManager packageManager, ApplicationInfo mApplicationInfo) {
-
+        scanner.runOnUiThread.run(() -> scanner.resetPackageStats());
+        core.classTreeDepth = 0;
         this.mApplicationInfo = mApplicationInfo;
         mPackageManager = packageManager;
         packageName = mApplicationInfo.packageName;
         FileBundle packageInfo = scanner.scannerDatabase.getFileBundle(packageName);
+        boolean[] hasVstCallback = null;
         if (packageInfo == null) {
             packageInfo = new FileBundle();
             scanner.scannerDatabase.putFileBundle(packageName, packageInfo);
+            label = packageManager.getApplicationLabel(mApplicationInfo);
+            if (label == null) {
+                Log.e(TAG, "verify: packageManager returned a null label");
+            }
+            packageInfo.putCharSequence("label", label);
+            icon = packageManager.getApplicationIcon(mApplicationInfo);
+            logo = packageManager.getApplicationLogo(mApplicationInfo);
+            banner = packageManager.getApplicationBanner(mApplicationInfo);
+        } else {
+            label = packageInfo.getCharSequence("label");
+            if (label == null) {
+                Log.e(TAG, "verify: cached label is null, re-obtaining label");
+                label = packageManager.getApplicationLabel(mApplicationInfo);
+                if (label == null) {
+                    Log.e(TAG, "verify: packageManager returned a null label");
+                }
+                packageInfo.putCharSequence("label", label);
+            }
+            icon = packageManager.getApplicationIcon(mApplicationInfo);
+            logo = packageManager.getApplicationLogo(mApplicationInfo);
+            banner = packageManager.getApplicationBanner(mApplicationInfo);
+            hasVstCallback = packageInfo.getBooleanArray("hasVstCallback");
+            if (hasVstCallback == null || !hasVstCallback[0]) return false;
         }
         applicationContext = core.createContextForPackage(context, mApplicationInfo);
         if (applicationContext == null) return false;
-        label = packageInfo.getCharSequence("label");
-        if (label == null) {
-            label = packageManager.getApplicationLabel(mApplicationInfo);
-            packageInfo.putCharSequence("label", label);
-        }
-        icon = packageManager.getApplicationIcon(mApplicationInfo);
-        logo = packageManager.getApplicationLogo(mApplicationInfo);
-        banner = packageManager.getApplicationBanner(mApplicationInfo);
         classLoader = applicationContext.getClassLoader();
         callbackClassName = VstCallback.className;
         classFiles = packageInfo.getStringArrayList("classFiles");
@@ -101,21 +118,23 @@ public class VST {
             classFiles = core.getClassFiles(classLoader);
             packageInfo.putStringArrayList("classFiles", classFiles);
         }
-        boolean[] hasVstCallback = packageInfo.getBooleanArray("hasVstCallback");
-        if (hasVstCallback == null) {
-            hasVstCallback = new boolean[]{core.hasVstCallback(classFiles, callbackClassName)};
-            packageInfo.putBooleanArray("hasVstCallback", hasVstCallback);
-        }
+        hasVstCallback = new boolean[]{core.hasVstCallback(classFiles, callbackClassName)};
+        packageInfo.putBooleanArray("hasVstCallback", hasVstCallback);
         if (hasVstCallback[0]) {
             cachedCallbacks = packageInfo.getIntegerArrayList("callbacks");
             if (cachedCallbacks == null) {
                 callbacks = core.getCallbacks(classLoader, classFiles, callbackClassName);
-                cachedCallbacks = new ArrayList<Integer>();
-                for (Pair<Class, Integer> callback : callbacks) {
-                    if (core.debug) Log.d(core.TAG, "vst callback = [" + callback + "]");
-                    cachedCallbacks.add(callback.second);
+                if (callbacks.isEmpty()) {
+                    hasVstCallback[0] = false;
+                    packageInfo.putBooleanArray("hasVstCallback", hasVstCallback);
+                } else {
+                    cachedCallbacks = new ArrayList<Integer>();
+                    for (Pair<Class, Integer> callback : callbacks) {
+                        if (core.debug) Log.d(core.TAG, "vst callback = [" + callback + "]");
+                        cachedCallbacks.add(callback.second);
+                    }
+                    packageInfo.putIntegerArrayList("callbacks", cachedCallbacks);
                 }
-                packageInfo.putIntegerArrayList("callbacks", cachedCallbacks);
             } else {
                 int cachedCallbacksSize = cachedCallbacks.size();
                 scanner.runOnUiThread.run(() -> scanner.onClassFullyScannedSetMax.run(cachedCallbacksSize));
@@ -133,17 +152,23 @@ public class VST {
                             Log.d(core.TAG, "VstCore: getCallbacks: class could not be loaded: " + className);
                         continue;
                     }
-                    if (core.debug) Log.d(TAG, "VstCore: getCallbacks: found callback: " + className);
+                    if (core.debug)
+                        Log.d(TAG, "VstCore: getCallbacks: found callback: " + className);
                     callbacks.add(new Pair<>(c, i));
                     scanner.runOnUiThread.run(() -> scanner.onVstFound.run(++scanner.vstCount, className, -1));
-                    int finalI = i+1;
+                    int finalI = i + 1;
                     scanner.runOnUiThread.run(() -> scanner.onClassFullyScanned.run(finalI, className, cachedCallbacksSize));
                 }
-                for (Pair<Class, Integer> callback : callbacks) {
-                    if (core.debug) Log.d(TAG, "vst callback = [" + callback + "]");
+                if (callbacks.isEmpty()) {
+                    hasVstCallback[0] = false;
+                    packageInfo.putBooleanArray("hasVstCallback", hasVstCallback);
+                } else {
+                    for (Pair<Class, Integer> callback : callbacks) {
+                        if (core.debug) Log.d(TAG, "vst callback = [" + callback + "]");
+                    }
                 }
             }
-            return !callbacks.isEmpty();
+            return hasVstCallback[0];
         }
         return false;
     }

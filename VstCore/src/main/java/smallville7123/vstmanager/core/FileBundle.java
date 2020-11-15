@@ -14,6 +14,7 @@ import androidx.annotation.RequiresApi;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -21,6 +22,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.io.StreamCorruptedException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -2056,8 +2058,11 @@ public class FileBundle implements Serializable {
                 oos.close();
                 fis.close();
                 this.mMap = fileBundle.mMap;
+            } catch (EOFException | StreamCorruptedException e) {
+                Log.e(TAG, "Database is corrupted, creating a new database");
+                mMap = new ArrayMap<String, Object>();
             } catch (Exception e) {
-                throw new RuntimeException("failed to read database file: ", e);
+                throw new RuntimeException("failed to read database file: " + e);
             }
         }
     }

@@ -18,30 +18,22 @@ public class VstCore {
     boolean debug = true;
     ArrayList<String> ommitedClassPrefixes = new ArrayList<>();
     ArrayList<String> ommitedPackagePrefixes = new ArrayList<>();
-    ArrayList<Boolean> printedPackages = new ArrayList();
+    ArrayList<String> ommitedPackages = new ArrayList<>();
+    ArrayList<Boolean> printedPackagePrefixes = new ArrayList<>();
+    ArrayList<Boolean> printedPackages = new ArrayList<>();
     VstScanner scanner;
     int classTreeDepth = 0;
 
     public VstCore() {
-        ommitedClassPrefixes.add("androidx"); // android
-        ommitedClassPrefixes.add("android"); // android
-        ommitedClassPrefixes.add("com.google.android.material"); // android
-        ommitedPackagePrefixes.add("android"); // android
-        ommitedPackagePrefixes.add("com.android"); // android
-        ommitedPackagePrefixes.add("com.google"); // google apps
-        ommitedPackagePrefixes.add("com.opengapps"); // google apps
-        ommitedPackagePrefixes.add("com.samsung"); // samsung packages
-        ommitedPackagePrefixes.add("com.sec.android"); // additional android packages
-        ommitedPackagePrefixes.add("org.mozilla.firefox"); // Firefox
-        ommitedPackagePrefixes.add("lynx.remix"); // Lynx Remix, a modded kik
-        ommitedPackagePrefixes.add("org.telegram.messenger"); // Telegram
-        ommitedPackagePrefixes.add("org.fdroid.fdroid"); // F-Droid
-        ommitedPackagePrefixes.add("com.crunchyroll.crunchyroid"); // Crunchyroll
-        ommitedPackagePrefixes.add("com.topjohnwu.magisk"); // Magisk Manager
+        // android seems to include ALL classes from ALL packages
+        // this is NOT what we want
+        ommitedPackages.add("android");
 
         // only print what we are skipping once
         int size = ommitedPackagePrefixes.size();
-        for (int i1 = 0; i1 < size; i1++) printedPackages.add(false);
+        for (int i1 = 0; i1 < size; i1++) printedPackagePrefixes.add(false);
+        int size_ = ommitedPackages.size();
+        for (int i1 = 0; i1 < size_; i1++) printedPackages.add(false);
     }
 
     public VstCore(VstScanner scanner) {
@@ -61,15 +53,24 @@ public class VstCore {
             return null;
         }
 
-        // reset counts on new package context
-        classTreeDepth = 0;
-        scanner.runOnUiThread.run(() -> scanner.resetPackageStats());
+        for (int i1 = 0; i1 < ommitedPackages.size(); i1++) {
+            String ommitedPackage = ommitedPackages.get(i1);
+            if (applicationInfo.packageName.contentEquals(ommitedPackage)) {
+                if (!printedPackages.get(i1)) {
+                    if (debug) Log.d(TAG, "VstCore: createContextForPackage: skipping package: " + ommitedPackage);
+                    printedPackages.set(i1, true);
+                }
+                scanner.runOnUiThread.run(() -> scanner.onPackageSkipped.run(++scanner.skipped));
+                return null;
+            }
+        }
+
         for (int i1 = 0; i1 < ommitedPackagePrefixes.size(); i1++) {
             String ommitedPackagePrefix = ommitedPackagePrefixes.get(i1);
             if (applicationInfo.packageName.startsWith(ommitedPackagePrefix)) {
-                if (!printedPackages.get(i1)) {
+                if (!printedPackagePrefixes.get(i1)) {
                     if (debug) Log.d(TAG, "VstCore: createContextForPackage: skipping package prefix: " + ommitedPackagePrefix);
-                    printedPackages.set(i1, true);
+                    printedPackagePrefixes.set(i1, true);
                 }
                 scanner.runOnUiThread.run(() -> scanner.onPackageSkipped.run(++scanner.skipped));
                 return null;
@@ -267,22 +268,46 @@ public class VstCore {
     }
 
     boolean hasVstCallback(ArrayList<String> classFiles, CharSequence callbackClassName) {
+        if (classFiles == null) {
+            if (debug) Log.d(TAG, "VstCore: hasVstCallback: classFiles is null");
+            return false;
+        }
+        if (classFiles.isEmpty()) {
+            if (debug) Log.d(TAG, "VstCore: hasVstCallback: classFiles is empty");
+            return false;
+        }
+        if (callbackClassName == null) {
+            if (debug) Log.d(TAG, "VstCore: hasVstCallback: callbackClassName is null");
+            return false;
+        }
+        if (callbackClassName.length() == 0) {
+            if (debug) Log.d(TAG, "VstCore: hasVstCallback: callbackClassName is zero length");
+            return false;
+        }
         if (debug) Log.d(TAG, "VstCore: hasVstCallback: searching for [" + callbackClassName + "]");
         int size = classFiles.size();
         scanner.runOnUiThread.run(() -> scanner.onClassQuickScannedSetMax.run(size));
         scanner.runOnUiThread.run(() -> scanner.onClassFullyScannedSetMax.run(size));
         for (int i = 0; i < size; i++) {
             String className = classFiles.get(i);
-            if (className.contentEquals("smallville7123.vstmanager.core.VstActivity")) {
-                if (debug) Log.d(TAG, "VstCore: hasVstCallback: skipping internal callback: [" + callbackClassName + "]");
-                continue;
-            }
-            if (className.contentEquals("smallville7123.vstmanager.core.ReflectionActivity")) {
-                if (debug) Log.d(TAG, "VstCore: hasVstCallback: skipping internal callback: [" + callbackClassName + "]");
+            if (
+                className.contentEquals("smallville7123.vstmanager.core.VstActivity") ||
+                className.contentEquals("smallville7123.vstmanager.core.ReflectionActivity")
+            ) {
+                if (debug) Log.d(TAG, "VstCore: hasVstCallback: skipping internal callback: [" + className + "]");
+                int finalI = i+1;
+                scanner.runOnUiThread.run(() -> scanner.onClassQuickScanned.run(finalI, className, size));
+                try {
+                    Thread.sleep(0, 1);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
                 continue;
             }
             if (className.contentEquals(callbackClassName)) {
                 if (debug) Log.d(TAG, "VstCore: hasVstCallback: found [" + callbackClassName + "]");
+                int finalI = i+1;
+                scanner.runOnUiThread.run(() -> scanner.onClassQuickScanned.run(finalI, className, size));
                 return true;
             }
             int finalI = i+1;
@@ -326,6 +351,11 @@ public class VstCore {
             }
             int finalI = i+1;
             scanner.runOnUiThread.run(() -> scanner.onClassFullyScanned.run(finalI, className, size));
+            try {
+                Thread.sleep(0, 1);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
         return callbacks;
     }

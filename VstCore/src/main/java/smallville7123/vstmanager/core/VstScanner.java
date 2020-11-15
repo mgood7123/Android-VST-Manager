@@ -146,6 +146,7 @@ public class VstScanner {
         VST vst = new VST(core);
         vst.scanner = this;
         if (vst.verify(context, packageManager, applicationInfo)) {
+            // TODO: prevent adding duplicates
             vstList.add(vst);
             return vst;
         }
@@ -186,16 +187,14 @@ public class VstScanner {
                 if (scannerDatabase == null) {
                     runOnUiThread.run(() -> onDatabaseStatusChanged.run("Database: Creating"));
                     scannerDatabase = new FileBundle(context, "ScannerDatabase");
-                    runOnUiThread.run(() -> {
-                        onDatabaseStatusChanged.run("Database: Created");
-                        onDatabaseStatusChanged.run("Database: Reading");
-                    });
-                    scannerDatabase.read();
-                    runOnUiThread.run(() -> {
-                        onDatabaseStatusChanged.run("Database: Read");
-                        onDatabaseStatusChanged.run("Database: Updating");
-                    });
+                    runOnUiThread.run(() -> onDatabaseStatusChanged.run("Database: Created"));
                 }
+                runOnUiThread.run(() -> onDatabaseStatusChanged.run("Database: Reading"));
+                scannerDatabase.read();
+                runOnUiThread.run(() -> {
+                    onDatabaseStatusChanged.run("Database: Read");
+                    onDatabaseStatusChanged.run("Database: Updating");
+                });
                 for (int i = 0; i < size; i++) {
                     ApplicationInfo applicationInfo = mInstalledApplications.get(i);
                     int finalI = i+1;
