@@ -28,6 +28,14 @@
         android:background="@color/cardview_dark_background"
         >
         <TextView
+            android:id="@+id/DatabaseStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Database: None"
+            android:layout_gravity="center"
+            android:textColor="@color/cardview_light_background"
+            />
+        <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Packages Scanned"
@@ -49,6 +57,7 @@
             android:text="0/0"
             android:layout_gravity="center"
             android:textColor="@color/cardview_light_background"
+            android:layout_marginBottom="30dp"
             />
 
         <TextView

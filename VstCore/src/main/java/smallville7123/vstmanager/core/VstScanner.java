@@ -8,8 +8,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class VstScanner {
-    public interface PackageBeingScannedRunnable {
-        void run(String packageName);
+
+    public interface StringRunnable {
+        void run(String text);
     }
 
     public interface PackageScanRunnable {
@@ -40,7 +41,9 @@ public class VstScanner {
     Runnable onScanStarted = () -> {};
     Runnable onScanComplete = () -> {};
 
-    PackageBeingScannedRunnable onPackageBeingScanned = (name) -> {};
+    StringRunnable onDatabaseStatusChanged = (name) -> {};
+
+    StringRunnable onPackageBeingScanned = (name) -> {};
 
     PackageScanRunnable onPackageScanned = (progress, applicationInfo, max) -> {};
     SetMaxRunnable onPackageScannedSetMax = max -> {};
@@ -74,7 +77,11 @@ public class VstScanner {
         this.onClassTreeDepth = onClassTreeDepth;
     }
 
-    public void setOnPackageBeingScanned(PackageBeingScannedRunnable onPackageBeingScanned) {
+    public void setOnDatabaseStatusChanged(StringRunnable onDatabaseStatusChanged) {
+        this.onDatabaseStatusChanged = onDatabaseStatusChanged;
+    }
+
+    public void setOnPackageBeingScanned(StringRunnable onPackageBeingScanned) {
         this.onPackageBeingScanned = onPackageBeingScanned;
     }
 
@@ -161,17 +168,6 @@ public class VstScanner {
     FileBundle scannerDatabase;
 
     public void scan(Context context, PackageManager packageManager, List<ApplicationInfo> mInstalledApplications) {
-        if (scannerDatabase == null) {
-            scannerDatabase = new FileBundle(context, "ScannerDatabase");
-            scannerDatabase.putFileBundle("apple", new FileBundle());
-            if (scannerDatabase.getFileBundle("apple") == null)
-                throw new RuntimeException("before serialization");
-            scannerDatabase.write();
-            scannerDatabase = new FileBundle(context, "ScannerDatabase");
-            scannerDatabase.read();
-            if (scannerDatabase.getFileBundle("apple") == null)
-                throw new RuntimeException("after serialization");
-        }
         if (isScanning) {
             return;
         }
@@ -187,6 +183,19 @@ public class VstScanner {
                 scanComplete = false;
                 isScanning = true;
                 runOnUiThread.run(() -> onScanStarted.run());
+                if (scannerDatabase == null) {
+                    runOnUiThread.run(() -> onDatabaseStatusChanged.run("Database: Creating"));
+                    scannerDatabase = new FileBundle(context, "ScannerDatabase");
+                    runOnUiThread.run(() -> {
+                        onDatabaseStatusChanged.run("Database: Created");
+                        onDatabaseStatusChanged.run("Database: Reading");
+                    });
+                    scannerDatabase.read();
+                    runOnUiThread.run(() -> {
+                        onDatabaseStatusChanged.run("Database: Read");
+                        onDatabaseStatusChanged.run("Database: Updating");
+                    });
+                }
                 for (int i = 0; i < size; i++) {
                     ApplicationInfo applicationInfo = mInstalledApplications.get(i);
                     int finalI = i+1;
@@ -199,7 +208,15 @@ public class VstScanner {
                         e.printStackTrace();
                     }
                 }
-                runOnUiThread.run(() -> onScanComplete.run());
+                runOnUiThread.run(() -> {
+                    onDatabaseStatusChanged.run("Database: Updated");
+                    onDatabaseStatusChanged.run("Database: Writing");
+                });
+                scannerDatabase.write();
+                runOnUiThread.run(() -> {
+                    onDatabaseStatusChanged.run("Database: Written");
+                    onScanComplete.run();
+                });
                 isScanning = false;
                 scanComplete = true;
             }

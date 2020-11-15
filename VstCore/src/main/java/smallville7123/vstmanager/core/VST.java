@@ -5,6 +5,7 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.graphics.drawable.Drawable;
 import android.util.Log;
+import android.util.Pair;
 
 import java.util.ArrayList;
 
@@ -26,8 +27,9 @@ public class VST {
     ClassLoader classLoader;
     String callbackClassName;
     ArrayList<String> classFiles;
-    ArrayList<Class> callbacks;
+    ArrayList<Pair<Class, Integer>> callbacks;
     PackageManager mPackageManager;
+    private ArrayList<Integer> cachedCallbacks;
 
     VST() {
         core = new VstCore();
@@ -73,22 +75,74 @@ public class VST {
     }
 
     public boolean verify(Context context, PackageManager packageManager, ApplicationInfo mApplicationInfo) {
+
         this.mApplicationInfo = mApplicationInfo;
         mPackageManager = packageManager;
         packageName = mApplicationInfo.packageName;
-//        FileDatabase packageDatabase = scanner.scannerDatabase.createDataBase(packageName);
+        FileBundle packageInfo = scanner.scannerDatabase.getFileBundle(packageName);
+        if (packageInfo == null) {
+            packageInfo = new FileBundle();
+            scanner.scannerDatabase.putFileBundle(packageName, packageInfo);
+        }
         applicationContext = core.createContextForPackage(context, mApplicationInfo);
         if (applicationContext == null) return false;
-        label = packageManager.getApplicationLabel(mApplicationInfo);
+        label = packageInfo.getCharSequence("label");
+        if (label == null) {
+            label = packageManager.getApplicationLabel(mApplicationInfo);
+            packageInfo.putCharSequence("label", label);
+        }
         icon = packageManager.getApplicationIcon(mApplicationInfo);
         logo = packageManager.getApplicationLogo(mApplicationInfo);
         banner = packageManager.getApplicationBanner(mApplicationInfo);
         classLoader = applicationContext.getClassLoader();
-        callbackClassName = VstCallback.class.getName();
-        classFiles = core.getClassFiles(classLoader);
-        if (core.hasVstCallback(classFiles, callbackClassName)) {
-            callbacks = core.getCallbacks(classLoader, classFiles, callbackClassName);
-            for (Class callback : callbacks) if (core.debug) Log.d(TAG, "vst callback = [" + callback + "]");
+        callbackClassName = VstCallback.className;
+        classFiles = packageInfo.getStringArrayList("classFiles");
+        if (classFiles == null) {
+            classFiles = core.getClassFiles(classLoader);
+            packageInfo.putStringArrayList("classFiles", classFiles);
+        }
+        boolean[] hasVstCallback = packageInfo.getBooleanArray("hasVstCallback");
+        if (hasVstCallback == null) {
+            hasVstCallback = new boolean[]{core.hasVstCallback(classFiles, callbackClassName)};
+            packageInfo.putBooleanArray("hasVstCallback", hasVstCallback);
+        }
+        if (hasVstCallback[0]) {
+            cachedCallbacks = packageInfo.getIntegerArrayList("callbacks");
+            if (cachedCallbacks == null) {
+                callbacks = core.getCallbacks(classLoader, classFiles, callbackClassName);
+                cachedCallbacks = new ArrayList<Integer>();
+                for (Pair<Class, Integer> callback : callbacks) {
+                    if (core.debug) Log.d(core.TAG, "vst callback = [" + callback + "]");
+                    cachedCallbacks.add(callback.second);
+                }
+                packageInfo.putIntegerArrayList("callbacks", cachedCallbacks);
+            } else {
+                int cachedCallbacksSize = cachedCallbacks.size();
+                scanner.runOnUiThread.run(() -> scanner.onClassFullyScannedSetMax.run(cachedCallbacksSize));
+                callbacks = new ArrayList<>(cachedCallbacksSize);
+                for (int i = 0; i < cachedCallbacksSize; i++) {
+                    Integer cachedCallback = cachedCallbacks.get(i);
+                    String className = classFiles.get(cachedCallback);
+                    Class c = null;
+                    try {
+                        if (core.debug)
+                            Log.d(core.TAG, "VstCore: getCallbacks: loading class: " + className);
+                        c = classLoader.loadClass(className);
+                    } catch (ClassNotFoundException e) {
+                        if (core.debug)
+                            Log.d(core.TAG, "VstCore: getCallbacks: class could not be loaded: " + className);
+                        continue;
+                    }
+                    if (core.debug) Log.d(TAG, "VstCore: getCallbacks: found callback: " + className);
+                    callbacks.add(new Pair<>(c, i));
+                    scanner.runOnUiThread.run(() -> scanner.onVstFound.run(++scanner.vstCount, className, -1));
+                    int finalI = i+1;
+                    scanner.runOnUiThread.run(() -> scanner.onClassFullyScanned.run(finalI, className, cachedCallbacksSize));
+                }
+                for (Pair<Class, Integer> callback : callbacks) {
+                    if (core.debug) Log.d(TAG, "vst callback = [" + callback + "]");
+                }
+            }
             return !callbacks.isEmpty();
         }
         return false;

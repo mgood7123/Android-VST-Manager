@@ -3,6 +3,7 @@ package smallville7123.vstmanager.core;
 import android.util.Log;
 
 public interface VstCallback {
+    static final String className = VstCallback.class.getName();
     static final String TAG = "VstCallback";
 
     public default void VST_CALLBACK_ON_CREATE() {

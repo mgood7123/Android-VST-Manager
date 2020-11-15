@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.util.Log;
+import android.util.Pair;
 import android.view.View;
 
 import java.util.ArrayList;
@@ -31,19 +32,19 @@ public class VstHost {
     }
 
     public void launchVst(Context context, String packageName, VST vst, VstView contentRoot) {
-        for (Class callback : vst.callbacks) {
-            if (ReflectionHelpers.classAextendsB(callback, ReflectionActivity.class)) {
-                Log.d(TAG, "launchVst: callback [" + callback + "] extends ReflectionActivity");
+        for (Pair<Class, Integer> callback : vst.callbacks) {
+            if (ReflectionHelpers.classAextendsB(callback.first, ReflectionActivity.class)) {
+                Log.d(TAG, "launchVst: callback [" + callback.first + "] extends ReflectionActivity");
                 WindowView window = contentRoot.requestNewWindow();
                 window.setTitle(vst.label);
                 window.setIcon(vst.icon);
                 ReflectionActivity reflectionActivity = new ReflectionActivity(
-                        context, packageName, vst.applicationContext, callback, window
+                        context, packageName, vst.applicationContext, callback.first, window
                 );
                 reflectionActivity.callOnCreate(null);
                 VSTs.add(reflectionActivity);
             } else {
-                Log.d(TAG, "launchVst: callback [" + callback + "] does not extend ReflectionActivity");
+                Log.d(TAG, "launchVst: callback [" + callback.first + "] does not extend ReflectionActivity");
             }
         }
     }

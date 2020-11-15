@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.util.Log;
+import android.util.Pair;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -22,13 +23,15 @@ public class VstCore {
     int classTreeDepth = 0;
 
     public VstCore() {
-        ommitedClassPrefixes.add("androidx");
-        ommitedClassPrefixes.add("android");
-        ommitedClassPrefixes.add("com.google.android.material");
-        ommitedPackagePrefixes.add("android");
-        ommitedPackagePrefixes.add("com.android");
-        ommitedPackagePrefixes.add("com.google");
-        ommitedPackagePrefixes.add("com.opengapps");
+        ommitedClassPrefixes.add("androidx"); // android
+        ommitedClassPrefixes.add("android"); // android
+        ommitedClassPrefixes.add("com.google.android.material"); // android
+        ommitedPackagePrefixes.add("android"); // android
+        ommitedPackagePrefixes.add("com.android"); // android
+        ommitedPackagePrefixes.add("com.google"); // google apps
+        ommitedPackagePrefixes.add("com.opengapps"); // google apps
+        ommitedPackagePrefixes.add("com.samsung"); // samsung packages
+        ommitedPackagePrefixes.add("com.sec.android"); // additional android packages
         ommitedPackagePrefixes.add("org.mozilla.firefox"); // Firefox
         ommitedPackagePrefixes.add("lynx.remix"); // Lynx Remix, a modded kik
         ommitedPackagePrefixes.add("org.telegram.messenger"); // Telegram
@@ -205,6 +208,7 @@ public class VstCore {
 
 
     ArrayList<String> getClassFiles(ClassLoader classLoader) {
+
         ArrayList<DexFile> dexList = findAllDexFiles(classLoader);
         int dexListSize = dexList.size();
 
@@ -293,8 +297,8 @@ public class VstCore {
         return false;
     }
 
-    ArrayList<Class> getCallbacks(ClassLoader classLoader, ArrayList<String> classFiles, String callbackClassName) {
-        ArrayList<Class> callbacks = new ArrayList<>();
+    ArrayList<Pair<Class, Integer>> getCallbacks(ClassLoader classLoader, ArrayList<String> classFiles, String callbackClassName) {
+        ArrayList<Pair<Class, Integer>> callbacks = new ArrayList<>();
         int size = classFiles.size();
         scanner.runOnUiThread.run(() -> scanner.onClassFullyScannedSetMax.run(size));
         for (int i = 0; i < size; i++) {
@@ -317,7 +321,7 @@ public class VstCore {
             }
             if (ReflectionHelpers.containsInterface(c, callbackClassName)) {
                 if (debug) Log.d(TAG, "VstCore: getCallbacks: found callback: " + className);
-                callbacks.add(c);
+                callbacks.add(new Pair<>(c, i));
                 scanner.runOnUiThread.run(() -> scanner.onVstFound.run(++scanner.vstCount, className, -1));
             }
             int finalI = i+1;
