@@ -11,8 +11,8 @@ import android.view.ContextThemeWrapper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.FrameLayout;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.LayoutRes;
 
 import java.util.ArrayList;
@@ -32,7 +32,7 @@ public class ReflectionActivity extends ContextThemeWrapper {
     Handler mHandler = null;
     Handler UiThread = null;
 
-    ViewGroup mContentRoot = null;
+    public ViewGroup mContentRoot = null;
     LayoutInflater layoutInflater = null;
     Context hostContext = null;
     ClassLoader hostClassLoader = null;
@@ -142,15 +142,15 @@ public class ReflectionActivity extends ContextThemeWrapper {
 
     public ReflectionActivity(Context context, String packageName, Context applicationContext, Class callback, ViewGroup contentRoot) {
         currentClient = linkClientWithHost(callback, context, applicationContext);
-        Log.d(TAG, "client = [" + currentClient + "]");
+        Log.d(TAG, "client = [" + currentClient + "], contentRoot = [" + contentRoot + "]");
         ReflectionHelpers.setField(currentClient, "mContentRoot", contentRoot);
     }
 
-    void callOnCreate(Bundle savedState) {
+    public void callOnCreate(Bundle savedState) {
         ReflectionHelpers.callInstanceMethod(currentClient, "onCreate", from(Bundle.class, savedState));
     }
 
-    private Object linkClientWithHost(Class clientClass, Context hostContext, Context clientContext) {
+    public Object linkClientWithHost(Class clientClass, Context hostContext, Context clientContext) {
         Pair<Object, Context> host = new Pair<>(this, hostContext);
         Pair<Object, Context> client = new Pair<>(newInstance(clientClass), clientContext);
         ReflectionHelpers.callInstanceMethod(client.first, "linkHost",
@@ -177,41 +177,60 @@ public class ReflectionActivity extends ContextThemeWrapper {
                 from(Pair.class, client)
         );
         // next we set ourselves up
-        attachBaseContext(client.second);
+        setup(client.second);
+    }
+
+    public void setup(Context context) {
+        attachBaseContext(context);
         layoutInflater = LayoutInflater.from(this);
     }
 
-    protected void onCreate(Bundle savedInstanceState) {
+    public void setup(ViewGroup contentRoot, Context context) {
+        mContentRoot = contentRoot;
+        setup(context);
+    }
+
+    public void onCreate(Bundle savedInstanceState) {
         Log.i(TAG, "onCreate");
     }
 
-    protected void setContentView(ViewGroup contentRoot) {
+    public void setContentView(View view) {
         runOnUIThread(() -> {
-//            if (mContentRoot.getChildAt(0) != null) {
-//                mContentRoot.removeViewAt(0);
-//            }
-            mContentRoot.addView(contentRoot);
+            if (mContentRoot.getChildAt(0) != null) {
+                mContentRoot.removeViewAt(0);
+            }
+            mContentRoot.addView(view);
         });
     }
 
-    protected void setContentView(ViewGroup contentRoot, FrameLayout.LayoutParams layoutParams) {
+    public void setContentView(View view, ViewGroup.LayoutParams layoutParams) {
         runOnUIThread(() -> {
-//            if (mContentRoot.getChildAt(0) != null) {
-//                mContentRoot.removeViewAt(0);
-//            }
-            mContentRoot.addView(contentRoot, layoutParams);
+            if (mContentRoot.getChildAt(0) != null) {
+                mContentRoot.removeViewAt(0);
+            }
+            mContentRoot.addView(view, layoutParams);
         });
     }
 
-    protected void setContentView(@LayoutRes int res) {
+    public void setContentView(@LayoutRes int res) {
         runOnUIThread(() -> {
+            if (mContentRoot.getChildAt(0) != null) {
+                mContentRoot.removeViewAt(0);
+            }
             View content = layoutInflater.inflate(res, mContentRoot, false);
-//            if (mContentRoot.getChildAt(0) != null) {
-//                mContentRoot.removeViewAt(0);
-//            }
             mContentRoot.addView(content, new ViewGroup.LayoutParams(MATCH_PARENT, MATCH_PARENT));
         });
     }
+
+    /**
+     * Convenience for calling
+     * {@link android.view.Window#getLayoutInflater}.
+     */
+    @NonNull
+    public LayoutInflater getLayoutInflater() {
+        return layoutInflater;
+    }
+
 
     final public void runOnUIThread(Runnable r) {
         r.run();

@@ -301,6 +301,10 @@ public class WindowView extends FrameLayout {
 
     FrameLayout window_content;
 
+    public FrameLayout getWindowContent() {
+        return window_content;
+    }
+
     private void setWindowContent(ConstraintLayout root) {
         window_content = root.findViewById(R.id.window_content);
         window_content.setBackgroundColor(Color.BLACK);

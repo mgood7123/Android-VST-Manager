@@ -39,7 +39,8 @@ public class VstHost {
                 window.setTitle(vst.label);
                 window.setIcon(vst.icon);
                 ReflectionActivity reflectionActivity = new ReflectionActivity(
-                        context, packageName, vst.applicationContext, callback.first, window
+                        context, packageName, vst.applicationContext,
+                        callback.first, window.getWindowContent()
                 );
                 reflectionActivity.callOnCreate(null);
                 VSTs.add(reflectionActivity);
