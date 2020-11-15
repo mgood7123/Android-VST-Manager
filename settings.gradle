@@ -1,3 +1,4 @@
+include ':simplevstdemopack'
 include ':libOverview'
 include ':TODO'
 include ':LibParcelableBundle'
