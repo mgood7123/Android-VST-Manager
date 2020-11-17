@@ -1,5 +1,6 @@
 package smallville7123.vstmanager.core;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
@@ -12,8 +13,10 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import androidx.annotation.NonNull;
+import androidx.annotation.IdRes;
 import androidx.annotation.LayoutRes;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -190,7 +193,7 @@ public class ReflectionActivity extends ContextThemeWrapper {
         setup(context);
     }
 
-    public void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState) {
         Log.i(TAG, "onCreate");
     }
 
@@ -229,6 +232,25 @@ public class ReflectionActivity extends ContextThemeWrapper {
     @NonNull
     public LayoutInflater getLayoutInflater() {
         return layoutInflater;
+    }
+
+    /**
+     * Finds a view that was identified by the {@code android:id} XML attribute
+     * that was processed in {@link #onCreate}.
+     * <p>
+     * <strong>Note:</strong> In most cases -- depending on compiler support --
+     * the resulting view is automatically cast to the target class type. If
+     * the target class type is unconstrained, an explicit cast may be
+     * necessary.
+     *
+     * @param id the ID to search for
+     * @return a view with given ID if found, or {@code null} otherwise
+     * @see View#findViewById(int)
+     * @see Activity#requireViewById(int)
+     */
+    @Nullable
+    public <T extends View> T findViewById(@IdRes int id) {
+        return mContentRoot.findViewById(id);
     }
 
 

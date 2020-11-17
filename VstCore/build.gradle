@@ -34,8 +34,9 @@ dependencies {
     implementation 'com.google.android.material:material:1.2.1'
     api project(path: ':Taggable')
     api ("com.google.guava:guava:30.0-android")
-    implementation 'org.apache.commons:commons-collections4:4.4'
-    implementation 'androidx.constraintlayout:constraintlayout:2.0.2'
+    api 'com.arthenica:mobile-ffmpeg-full-gpl:4.4'
+    api 'org.apache.commons:commons-collections4:4.4'
+    implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
     implementation 'androidx.recyclerview:recyclerview:1.1.0'
     implementation project(path: ':libOverview')
     testImplementation 'junit:junit:4.13.1'
