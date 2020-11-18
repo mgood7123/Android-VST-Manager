@@ -5,7 +5,7 @@ import android.util.Log;
 public class Sequencer implements Runnable {
     private static final String TAG = "Sequencer";
 
-    private int tempo = 140*4;
+    private int tempo = 140;
     private boolean playing = false;
     private AudioDeck audioDeck;
     public Instrument[] instruments;
@@ -39,7 +39,7 @@ public class Sequencer implements Runnable {
                     }
                 }
                 try {
-                    Thread.sleep(((1000 * 60) / 140) / 4);
+                    Thread.sleep((1000 * 60) / 140);
                     System.out.println(i);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
