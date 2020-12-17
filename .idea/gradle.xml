@@ -24,6 +24,7 @@
             <option value="$PROJECT_DIR$/app" />
             <option value="$PROJECT_DIR$/examplenonvstapplication" />
             <option value="$PROJECT_DIR$/libOverview" />
+            <option value="$PROJECT_DIR$/nativevst" />
             <option value="$PROJECT_DIR$/simplevstdemopack" />
           </set>
         </option>

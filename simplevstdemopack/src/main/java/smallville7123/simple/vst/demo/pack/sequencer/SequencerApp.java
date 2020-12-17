@@ -79,7 +79,6 @@ public class SequencerApp extends VstActivity {
 
         audioDeck = new AudioDeck(this);
 
-
         sound1 = audioDeck.load(R.raw.kick, "wav");
 //        audioDeck.getTrack(sound1).loadIntoMemory();
 

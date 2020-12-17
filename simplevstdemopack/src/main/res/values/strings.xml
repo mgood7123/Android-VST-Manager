@@ -1,3 +1,12 @@
 <resources>
     <string name="app_name">SimpleVstDemoPack</string>
+    <string name="start">Start</string>
+    <string name="stop">Stop</string>
+    <string name="plus">+</string>
+    <string name="minus">-</string>
+    <string name="bps">bps</string>
+    <string name="timesignature">time signature</string>
+    <string name="dash">/</string>
+    <string name="volume">volume</string>
+    <string name="one">1</string>
 </resources>

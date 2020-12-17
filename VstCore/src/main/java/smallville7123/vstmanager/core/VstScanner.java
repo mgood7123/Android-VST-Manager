@@ -184,11 +184,15 @@ public class VstScanner {
                 scanComplete = false;
                 isScanning = true;
                 runOnUiThread.run(() -> onScanStarted.run());
-                if (scannerDatabase == null) {
-                    runOnUiThread.run(() -> onDatabaseStatusChanged.run("Database: Creating"));
-                    scannerDatabase = new FileBundle(context, "ScannerDatabase");
-                    runOnUiThread.run(() -> onDatabaseStatusChanged.run("Database: Created"));
+                if (scannerDatabase != null) {
+                    runOnUiThread.run(() -> onDatabaseStatusChanged.run("Database: Garbage collecting"));
+                    scannerDatabase = null;
+                    System.gc();
+                    runOnUiThread.run(() -> onDatabaseStatusChanged.run("Database: Garbage collected"));
                 }
+                runOnUiThread.run(() -> onDatabaseStatusChanged.run("Database: Creating"));
+                scannerDatabase = new FileBundle(context, "ScannerDatabase");
+                runOnUiThread.run(() -> onDatabaseStatusChanged.run("Database: Created"));
                 runOnUiThread.run(() -> onDatabaseStatusChanged.run("Database: Reading"));
                 scannerDatabase.read();
                 runOnUiThread.run(() -> {

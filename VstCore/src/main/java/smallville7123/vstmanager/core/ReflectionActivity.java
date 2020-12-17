@@ -18,6 +18,7 @@ import androidx.annotation.LayoutRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 
@@ -39,6 +40,15 @@ public class ReflectionActivity extends ContextThemeWrapper {
     LayoutInflater layoutInflater = null;
     Context hostContext = null;
     ClassLoader hostClassLoader = null;
+
+    public Context getHostContext() {
+        return hostLink != null ? hostLink.second : this;
+    }
+
+    @Override
+    public File getFilesDir() {
+        return hostLink != null ? hostLink.second.getFilesDir() : super.getFilesDir();
+    }
 
     static class ClassCaller {
 
@@ -180,6 +190,7 @@ public class ReflectionActivity extends ContextThemeWrapper {
                 from(Pair.class, client)
         );
         // next we set ourselves up
+        hostContext = host.second;
         setup(client.second);
     }
 
